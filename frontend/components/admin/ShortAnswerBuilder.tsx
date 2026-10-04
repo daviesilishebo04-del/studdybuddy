@@ -1,0 +1,433 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import {
+  Plus,
+  Trash2,
+  Edit3,
+  CheckCircle2,
+  AlertCircle,
+  HelpCircle,
+  Loader2,
+  Check,
+  Type,
+} from 'lucide-react';
+import { TopicWithCounts } from '@/backend/repositories/adminRepository';
+import { Question } from '@/backend/domain/types';
+
+interface ShortAnswerBuilderProps {
+  topics: TopicWithCounts[];
+  selectedTopicId?: string;
+  onTopicChange?: (topicId: string) => void;
+}
+
+export const ShortAnswerBuilder: React.FC<ShortAnswerBuilderProps> = ({
+  topics,
+  selectedTopicId,
+  onTopicChange,
+}) => {
+  const [topicId, setTopicId] = useState<string>(
+    selectedTopicId || (topics.length > 0 ? topics[0].id : '')
+  );
+
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+
+  // Form fields
+  const [prompt, setPrompt] = useState<string>('');
+  const [answersRaw, setAnswersRaw] = useState<string>('');
+  const [explanation, setExplanation] = useState<string>('');
+  const [order, setOrder] = useState<number>(1);
+
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (selectedTopicId && selectedTopicId !== topicId) {
+      setTopicId(selectedTopicId);
+    }
+  }, [selectedTopicId]);
+
+  const loadQuestions = async (tId: string) => {
+    if (!tId) return;
+    setIsLoading(true);
+    try {
+      const res = await fetch(
+        `/api/admin/questions?topicId=${tId}&type=SHORT_ANSWER`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setQuestions(data);
+      }
+    } catch (err) {
+      console.error('Failed to load Short Answer questions:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (topicId) {
+      loadQuestions(topicId);
+    }
+  }, [topicId]);
+
+  const handleTopicSelect = (newTopicId: string) => {
+    setTopicId(newTopicId);
+    setIsFormOpen(false);
+    setEditingQuestionId(null);
+    if (onTopicChange) onTopicChange(newTopicId);
+  };
+
+  const handleOpenCreateForm = () => {
+    setEditingQuestionId(null);
+    setPrompt('');
+    setAnswersRaw('');
+    setExplanation('');
+    setOrder(questions.length + 1);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    setIsFormOpen(true);
+  };
+
+  const handleOpenEditForm = (q: Question) => {
+    setEditingQuestionId(q.id);
+    setPrompt(q.prompt);
+    setAnswersRaw(q.acceptableAnswers ? q.acceptableAnswers.join(', ') : '');
+    setExplanation(q.explanation || '');
+    setOrder(q.order);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    setIsFormOpen(true);
+  };
+
+  const handleSaveQuestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    if (!prompt.trim()) {
+      setErrorMsg('Question prompt is required');
+      return;
+    }
+
+    const acceptableAnswers = answersRaw
+      .split(',')
+      .map((a) => a.trim().toLowerCase())
+      .filter(Boolean);
+
+    if (acceptableAnswers.length === 0) {
+      setErrorMsg('Please specify at least one acceptable answer');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      if (editingQuestionId) {
+        // Update existing question
+        const res = await fetch(`/api/admin/questions/${editingQuestionId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: prompt.trim(),
+            acceptableAnswers,
+            explanation: explanation.trim(),
+            order,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Failed to update question');
+        }
+      } else {
+        // Create new question
+        const res = await fetch('/api/admin/questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topicId,
+            prompt: prompt.trim(),
+            type: 'SHORT_ANSWER',
+            acceptableAnswers,
+            explanation: explanation.trim(),
+            order,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Failed to create question');
+        }
+      }
+
+      setSuccessMsg(
+        editingQuestionId ? 'Question updated!' : 'Question added!'
+      );
+      setIsFormOpen(false);
+      setEditingQuestionId(null);
+      await loadQuestions(topicId);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to save question');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteQuestion = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this question?')) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/questions/${id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        await loadQuestions(topicId);
+      }
+    } catch (err) {
+      console.error('Failed to delete question:', err);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Header with Topic Picker */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-md p-5 sm:p-6 border border-blue-300/80 shadow-xs">
+        <div>
+          <h2 className="text-xl font-black text-slate-950 tracking-tight flex items-center gap-2">
+            <Type className="w-5 h-5 text-blue-600" />
+            One-Word / Short Answer Question Builder
+          </h2>
+          <p className="text-xs text-slate-500 mt-1 font-medium">
+            Build recall questions where Alex types in the exact word, phrase, or number.
+          </p>
+        </div>
+
+        {/* Topic Selector */}
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          <div className="space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+              Select Topic
+            </span>
+            <select
+              value={topicId}
+              onChange={(e) => handleTopicSelect(e.target.value)}
+              className="px-3.5 py-2 rounded-md bg-white border border-slate-300 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500/20 cursor-pointer max-w-xs truncate"
+            >
+              {topics.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.subjectName}: {t.title}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            onClick={handleOpenCreateForm}
+            className="px-4 py-2.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-black transition flex items-center gap-1.5 shadow-xs cursor-pointer mt-auto"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add One-Word</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Feedback Alert */}
+      {errorMsg && (
+        <div className="p-3 rounded-md bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+      {successMsg && (
+        <div className="p-3 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <span>{successMsg}</span>
+        </div>
+      )}
+
+      {/* Add / Edit Form */}
+      {isFormOpen && (
+        <div className="bg-blue-50/50 rounded-md p-5 border border-blue-200/80 shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-blue-100">
+            <h3 className="text-sm font-black text-slate-950 flex items-center gap-2">
+              <Plus className="w-4 h-4 text-blue-600" />
+              {editingQuestionId
+                ? 'Edit Short Answer Question'
+                : 'Add New Short Answer Question'}
+            </h3>
+            <button
+              onClick={() => setIsFormOpen(false)}
+              className="text-xs font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+
+          <form onSubmit={handleSaveQuestion} className="space-y-4">
+            {/* Prompt */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700">Question Prompt</label>
+              <textarea
+                rows={2}
+                placeholder="e.g. What figure of speech is: 'The sea roared with anger'?"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                className="w-full p-3 rounded-md bg-white border border-slate-300 text-xs font-semibold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 placeholder:text-slate-400"
+              />
+            </div>
+
+            {/* Acceptable Answers */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-700">
+                  Acceptable Answers (Comma-separated)
+                </label>
+                <span className="text-[11px] text-slate-500 font-semibold">
+                  Case-insensitive match
+                </span>
+              </div>
+              <input
+                type="text"
+                placeholder="e.g. personification, personify"
+                value={answersRaw}
+                onChange={(e) => setAnswersRaw(e.target.value)}
+                className="w-full px-3.5 py-2 rounded-md bg-white border border-slate-300 text-xs font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 placeholder:text-slate-400"
+              />
+              <p className="text-[11px] text-slate-500 font-medium">
+                Include synonyms or variations so Alex isn&apos;t marked wrong for slight formatting differences.
+              </p>
+            </div>
+
+            {/* Explanation */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700">
+                Explanation (Shown to student after answering)
+              </label>
+              <textarea
+                rows={2}
+                placeholder="e.g. Personification gives human attributes (roaring with anger) to non-human things (the sea)."
+                value={explanation}
+                onChange={(e) => setExplanation(e.target.value)}
+                className="w-full p-3 rounded-md bg-white border border-slate-300 text-xs font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 placeholder:text-slate-400"
+              />
+            </div>
+
+            {/* Form actions */}
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsFormOpen(false)}
+                className="px-4 py-2 rounded-md text-slate-700 text-xs font-bold hover:bg-slate-100 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-black transition flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                {isSaving ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Check className="w-3.5 h-3.5" />
+                )}
+                <span>{editingQuestionId ? 'Update Question' : 'Save Question'}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Existing Questions List */}
+      {isLoading ? (
+        <div className="bg-white rounded-md p-12 text-center border border-blue-200/80 flex items-center justify-center gap-2 text-slate-400 text-xs font-medium">
+          <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+          <span>Loading questions...</span>
+        </div>
+      ) : questions.length === 0 ? (
+        <div className="bg-white rounded-md p-12 text-center border border-blue-200/80 text-slate-400">
+          <Type className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+          <p className="text-sm font-bold text-slate-700">
+            No short-answer questions yet for this topic
+          </p>
+          <p className="text-xs text-slate-400 mt-1">
+            Click &quot;Add One-Word&quot; above to create one-word or fill-in-the-blank questions.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3.5">
+          {questions.map((q, idx) => (
+            <div
+              key={q.id}
+              className="bg-white rounded-md p-5 border border-blue-200/80 shadow-xs flex flex-col sm:flex-row sm:items-start justify-between gap-4"
+            >
+              <div className="space-y-2.5 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-xs bg-blue-50 text-blue-700 text-xs font-black flex items-center justify-center border border-blue-200/60">
+                    {idx + 1}
+                  </span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    One-Word Question
+                  </span>
+                </div>
+
+                <p className="text-sm font-black text-slate-950 leading-snug">{q.prompt}</p>
+
+                {/* Acceptable answers badge */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-xs font-bold text-slate-500 mr-1">
+                    Acceptable:
+                  </span>
+                  {q.acceptableAnswers?.map((ans, aIdx) => (
+                    <span
+                      key={aIdx}
+                      className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 text-xs font-mono font-bold border border-blue-200/60"
+                    >
+                      &quot;{ans}&quot;
+                    </span>
+                  ))}
+                </div>
+
+                {/* Explanation */}
+                {q.explanation && (
+                  <p className="text-xs text-slate-600 bg-blue-50/30 p-2.5 rounded-md border border-blue-200/60 font-medium">
+                    <span className="font-bold text-slate-800">Explanation:</span>{' '}
+                    {q.explanation}
+                  </p>
+                )}
+              </div>
+
+              {/* Edit / Delete actions */}
+              <div className="flex items-center gap-2 self-end sm:self-start">
+                <button
+                  onClick={() => handleOpenEditForm(q)}
+                  className="p-2 rounded-md hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition cursor-pointer border border-transparent hover:border-slate-200"
+                  title="Edit question"
+                >
+                  <Edit3 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleDeleteQuestion(q.id)}
+                  disabled={deletingId === q.id}
+                  className="p-2 rounded-md hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition cursor-pointer border border-transparent hover:border-rose-200 disabled:opacity-50"
+                  title="Delete question"
+                >
+                  {deletingId === q.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};

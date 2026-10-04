@@ -1,0 +1,190 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  STUDENT
+  GUARDIAN
+}
+
+enum SelfRating {
+  EASY
+  FAIR
+  HARD
+}
+
+enum QuestionType {
+  MCQ
+  SHORT_ANSWER
+}
+
+model User {
+  id                    String    @id @default(cuid())
+  email                 String    @unique
+  name                  String
+  role                  Role      @default(STUDENT)
+  grade                 String?
+  onboardingCompletedAt DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  quizAttempts          QuizAttempt[]
+  studySessions         StudySession[]
+  priorities            SubjectPriority[]
+  timetableSlots        TimetableSlot[]
+  curriculumSubmissions CurriculumSubmission[]
+}
+
+model Subject {
+  id             String            @id @default(cuid())
+  slug           String            @unique
+  name           String
+  icon           String
+  colorTheme     String
+  isAvailable    Boolean           @default(false)
+  topics                Topic[]
+  priorities            SubjectPriority[]
+  timetableSlots        TimetableSlot[]
+  curriculumSubmissions CurriculumSubmission[]
+}
+
+model SubjectPriority {
+  id             String   @id @default(cuid())
+  userId         String
+  subjectId      String
+  priority       Float    @default(0.3)
+  isHard         Boolean  @default(false)
+  lastAccuracies Float[]  @default([])
+  updatedAt      DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, subjectId])
+}
+
+model TimetableSlot {
+  id        String   @id @default(cuid())
+  userId    String
+  subjectId String
+  startTime String
+  endTime   String
+  dayOfWeek String   @default("WEEKDAY")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Topic {
+  id            String   @id @default(cuid())
+  subjectId     String
+  title         String
+  slug          String   @unique
+  summary       String
+  order         Int      @default(0)
+  weekNumber    Int      @default(1)
+  notesMarkdown String
+  videoUrl      String?
+
+  subject   Subject       @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  questions Question[]
+  attempts  QuizAttempt[]
+}
+
+model Question {
+  id                 String       @id @default(cuid())
+  topicId            String
+  prompt             String
+  type               QuestionType @default(MCQ)
+  options            String[]
+  correctOptionIndex Int?
+  acceptableAnswers  String[]
+  explanation        String
+  order              Int          @default(0)
+
+  topic   Topic                @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  answers QuizQuestionAnswer[]
+}
+
+model QuizAttempt {
+  id              String      @id @default(cuid())
+  userId          String
+  topicId         String
+  scorePercent    Float
+  totalQuestions  Int
+  correctCount    Int
+  durationSeconds Int
+  selfRating      SelfRating?
+  isWeekendReview Boolean     @default(false)
+  completedAt     DateTime    @default(now())
+
+  user     User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic    Topic                @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  answers  QuizQuestionAnswer[]
+}
+
+model QuizQuestionAnswer {
+  id           String      @id @default(cuid())
+  attemptId    String
+  questionId   String
+  userResponse String
+  isCorrect    Boolean
+  timeTakenSec Int
+
+  attempt  QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model StudySession {
+  id                    String    @id @default(cuid())
+  userId                String
+  topicId               String?
+  startedAt             DateTime  @default(now())
+  endedAt               DateTime?
+  activeDurationSeconds Int       @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Streak {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  currentStreak  Int       @default(0)
+  longestStreak  Int       @default(0)
+  lastActiveDate DateTime?
+}
+
+enum SubmissionStatus {
+  PENDING
+  REVIEWED
+  ARCHIVED
+}
+
+model CurriculumSubmission {
+  id           String           @id @default(cuid())
+  userId       String
+  subjectId    String?
+  subjectName  String?
+  chapterTitle String?
+  notes        String?
+  imageUrls    String[]
+  status       SubmissionStatus @default(PENDING)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([subjectId])
+  @@index([status])
+}

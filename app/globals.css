@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+:root {
+  --background: #cce0fb;
+  --foreground: #0f172a;
+  
+  /* Serene Soft Sky Blue Background: slightly deeper to give depth and make cards pop */
+  --sky-gradient: linear-gradient(180deg, #d7e6fc 0%, #cce0fb 50%, #bfd8f9 100%);
+  --sky-blue-accent: #2563eb;
+  --sky-blue-light: #eaf2fd;
+
+  /* Card and Surface Tokens: Crisp White substrate with subtle edge definition */
+  --card-bg: #ffffff;
+  --card-border: #b3d1f8;
+  --card-shadow: 0 4px 20px -2px rgba(27, 85, 180, 0.09), 0 1px 4px -1px rgba(27, 85, 180, 0.05);
+  --card-shadow-hover: 0 10px 25px -4px rgba(27, 85, 180, 0.14), 0 3px 8px -1px rgba(27, 85, 180, 0.07);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card-bg: var(--card-bg);
+  --color-card-border: var(--card-border);
+  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Base Body with Serene Soft Sky Blue Canvas */
+body {
+  background: var(--sky-gradient);
+  min-height: 100vh;
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Crisp White Card Surfaces: Rectangular boxes with subtle modern rounding */
+.card-clean-white {
+  background-color: var(--card-bg);
+  border-radius: 0.5rem;
+  border: 1.5px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-clean-white:hover {
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-1px);
+}
+
+/* Action Buttons: Rectangular boxes, NO curving pill shapes */
+.btn-pill-blue {
+  background: linear-gradient(180deg, #1a68ff 0%, #0052e0 100%);
+  color: #ffffff;
+  border-radius: 0.5rem;
+  border: 1.5px solid #0046cb;
+  font-weight: 800;
+  box-shadow: 0 4px 14px -1px rgba(0, 85, 255, 0.40);
+  transition: all 0.15s ease-in-out;
+}
+.btn-pill-blue:hover {
+  background: linear-gradient(180deg, #0052e0 0%, #0041b3 100%);
+  border-color: #0036a3;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px -1px rgba(0, 85, 255, 0.50);
+}
+.btn-pill-blue:active {
+  transform: translateY(1px);
+}
+
+.btn-pill-green {
+  background: linear-gradient(180deg, #00d664 0%, #00a843 100%);
+  color: #ffffff;
+  border-radius: 0.5rem;
+  border: 1.5px solid #00963b;
+  font-weight: 800;
+  box-shadow: 0 4px 14px -1px rgba(0, 200, 83, 0.40);
+  transition: all 0.15s ease-in-out;
+}
+.btn-pill-green:hover {
+  background: linear-gradient(180deg, #00a843 0%, #008735 100%);
+  border-color: #007a30;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px -1px rgba(0, 200, 83, 0.50);
+}
+.btn-pill-green:active {
+  transform: translateY(1px);
+}
+
+/* Weekend Review Card: Rectangular box with warm amber accent */
+.card-weekend-review {
+  background-color: #fef9ee;
+  border-radius: 0.5rem;
+  border: 1.5px solid #fde68a;
+  box-shadow: 0 4px 14px -2px rgba(10, 31, 80, 0.10);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-weekend-review:hover {
+  background-color: #fef4df;
+  border-color: #fcd34d;
+  box-shadow: 0 8px 20px -2px rgba(10, 31, 80, 0.14);
+}
