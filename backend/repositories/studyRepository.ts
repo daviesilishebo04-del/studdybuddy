@@ -42,7 +42,6 @@ class RealPrismaStudyRepository {
             update: {
               name: u.name,
               grade: u.grade,
-              passwordHash: initialHash,
             },
             create: {
               id: u.id,
