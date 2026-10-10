@@ -1,93 +1,148 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/backend/lib/prisma';
-import { cookies } from 'next/headers';
+import { setSessionCookie } from '@/backend/lib/auth';
+import bcrypt from 'bcryptjs';
 
 export const dynamic = 'force-dynamic';
+
+// In-memory rate limiting map: identifier -> { count, lockUntil }
+const rateLimitMap = new Map<string, { attempts: number; lockUntil: number }>();
+
+function checkRateLimit(key: string): { allowed: boolean; waitMinutes?: number } {
+  const now = Date.now();
+  const record = rateLimitMap.get(key);
+
+  if (!record) {
+    return { allowed: true };
+  }
+
+  if (record.lockUntil > now) {
+    const waitMinutes = Math.ceil((record.lockUntil - now) / (60 * 1000));
+    return { allowed: false, waitMinutes };
+  }
+
+  if (record.lockUntil <= now && record.attempts >= 5) {
+    // Reset after lockout expires
+    rateLimitMap.delete(key);
+    return { allowed: true };
+  }
+
+  return { allowed: true };
+}
+
+function recordAttempt(key: string, success: boolean) {
+  if (success) {
+    rateLimitMap.delete(key);
+    return;
+  }
+
+  const now = Date.now();
+  const record = rateLimitMap.get(key) || { attempts: 0, lockUntil: 0 };
+  record.attempts += 1;
+
+  if (record.attempts >= 5) {
+    record.lockUntil = now + 15 * 60 * 1000; // 15-minute lockout after 5 failures
+  }
+
+  rateLimitMap.set(key, record);
+}
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { identifier, password, userId } = body;
+    const username = (body.username || body.identifier || '').trim();
+    const password = (body.password || '').trim();
 
-    let targetUser: { id: string; name: string; role: string; email: string } | null = null;
-
-    // 1. Direct userId login (for quick player select / dev testing)
-    if (userId) {
-      targetUser = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, name: true, role: true, email: true },
-      });
-    }
-
-    // 2. Identifier lookup (email or student username)
-    if (!targetUser && identifier) {
-      const trimmed = identifier.trim().toLowerCase();
-
-      // Check by exact email or friendly aliases
-      if (trimmed === 'alex' || trimmed === 'student' || trimmed === 'champ') {
-        targetUser = await prisma.user.findUnique({
-          where: { id: 'student-alex' },
-          select: { id: true, name: true, role: true, email: true },
-        });
-      } else if (trimmed === 'davie' || trimmed === 'guardian' || trimmed === 'mentor' || trimmed === 'admin') {
-        targetUser = await prisma.user.findUnique({
-          where: { id: 'guardian-davie' },
-          select: { id: true, name: true, role: true, email: true },
-        });
-      } else {
-        targetUser = await prisma.user.findFirst({
-          where: {
-            OR: [
-              { email: { equals: trimmed, mode: 'insensitive' } },
-              { name: { contains: trimmed, mode: 'insensitive' } },
-            ],
-          },
-          select: { id: true, name: true, role: true, email: true },
-        });
-      }
-    }
-
-    // Default fallback to student-alex if no user found during initial dev phase
-    if (!targetUser) {
-      targetUser = await prisma.user.findUnique({
-        where: { id: 'student-alex' },
-        select: { id: true, name: true, role: true, email: true },
-      });
-    }
-
-    if (!targetUser) {
+    if (!username || !password) {
       return NextResponse.json(
-        { error: 'Invalid credentials. Please check your username or email.' },
+        { error: 'Please enter both your name and password.' },
+        { status: 400 }
+      );
+    }
+
+    const rateLimitKey = username.toLowerCase();
+    const rateCheck = checkRateLimit(rateLimitKey);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { error: `Too many failed attempts. Please try again in ${rateCheck.waitMinutes} minutes.` },
+        { status: 429 }
+      );
+    }
+
+    const lower = username.toLowerCase();
+    const isNisa = lower === 'nisa' || lower === 'mboloma' || lower.includes('nisa');
+    const isDavie = lower === 'davie' || lower === 'admin' || lower.includes('davie') || lower.includes('mentor');
+    const isAlex = lower === 'alex';
+
+    // Lookup user by name (case-insensitive) or friendly seed alias
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { name: { equals: username, mode: 'insensitive' as const } },
+          ...(isNisa ? [{ id: 'student-nisa' }, { name: { equals: 'Nisa Mubuwa Mboloma', mode: 'insensitive' as const } }] : []),
+          ...(isDavie ? [{ id: 'guardian-davie' }, { name: { equals: 'Mentor Davie', mode: 'insensitive' as const } }] : []),
+          ...(isAlex ? [{ id: 'student-alex' }] : []),
+        ],
+      },
+    });
+
+    if (!user) {
+      recordAttempt(rateLimitKey, false);
+      return NextResponse.json(
+        { error: 'User not found. Ask your mentor to register your name.' },
         { status: 401 }
       );
     }
 
-    // Determine redirect destination based on role
-    const redirectUrl = targetUser.role === 'GUARDIAN' ? '/admin' : '/';
+    // Verify password
+    let passwordValid = false;
 
-    // Set secure HTTP-only session cookie
-    const cookieStore = await cookies();
-    cookieStore.set('studybuddy_session', JSON.stringify({
-      userId: targetUser.id,
-      name: targetUser.name,
-      role: targetUser.role,
-      email: targetUser.email,
-    }), {
-      path: '/',
-      httpOnly: true,
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30, // 30 days
+    if (user.passwordHash) {
+      passwordValid = await bcrypt.compare(password, user.passwordHash);
+    } else {
+      // First login for legacy/seeded account without password: set and hash this initial password!
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash: hashedPassword },
+      });
+      passwordValid = true;
+    }
+
+    if (!passwordValid) {
+      recordAttempt(rateLimitKey, false);
+      return NextResponse.json(
+        { error: 'Incorrect password. Ask your mentor if you forgot it.' },
+        { status: 401 }
+      );
+    }
+
+    // Successful authentication: clear rate limiter
+    recordAttempt(rateLimitKey, true);
+
+    // Issue cryptographic signed session cookie
+    await setSessionCookie({
+      userId: user.id,
+      name: user.name,
+      role: user.role,
     });
+
+    const redirectUrl = user.role === 'GUARDIAN' ? '/admin' : '/';
 
     return NextResponse.json({
       success: true,
-      user: targetUser,
+      user: {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        grade: user.grade,
+      },
       redirectUrl,
     });
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { error: 'Authentication failed. Please try again.' },
+      { error: 'An unexpected error occurred during login. Please try again.' },
       { status: 500 }
     );
   }

@@ -29,7 +29,15 @@ export type DesktopNavTab =
   | 'achievements'
   | 'profile';
 
+export interface CurrentUser {
+  id?: string;
+  name: string;
+  role: string;
+  grade?: string | null;
+}
+
 interface DesktopSidebarProps {
+  currentUser?: CurrentUser;
   activeTab: DesktopNavTab;
   onChangeTab: (tab: DesktopNavTab) => void;
   onOpenGuardian: () => void;
@@ -55,6 +63,7 @@ const SIDEBAR_ITEMS: {
 ];
 
 interface SidebarBodyProps {
+  currentUser?: CurrentUser;
   activeTab: DesktopNavTab;
   onChangeTab: (tab: DesktopNavTab) => void;
   onOpenGuardian: () => void;
@@ -65,6 +74,7 @@ interface SidebarBodyProps {
 }
 
 const SidebarBody: React.FC<SidebarBodyProps> = ({
+  currentUser,
   activeTab,
   onChangeTab,
   onOpenGuardian,
@@ -177,6 +187,23 @@ const SidebarBody: React.FC<SidebarBodyProps> = ({
           </p>
         </div>
 
+        {/* Current Logged-in User Badge */}
+        {currentUser && (
+          <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200">
+            <div className="w-7 h-7 rounded-lg bg-blue-600 text-white font-black text-xs flex items-center justify-center flex-shrink-0">
+              {currentUser.name?.[0]?.toUpperCase() || 'U'}
+            </div>
+            <div className="flex flex-col min-w-0 flex-1 leading-tight">
+              <span className="text-xs font-black text-slate-900 truncate">
+                {currentUser.name}
+              </span>
+              <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">
+                {currentUser.role === 'GUARDIAN' ? 'Mentor / Admin' : (currentUser.grade || 'Student')}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Guardian / Mentor Shortcut Button */}
         <button
           onClick={() => {
@@ -189,17 +216,19 @@ const SidebarBody: React.FC<SidebarBodyProps> = ({
           <span>Mentor Portal</span>
         </button>
 
-        {/* Admin Dashboard Direct Link */}
-        <Link
-          href="/admin"
-          onClick={() => {
-            if (isDrawer && onCloseMobile) onCloseMobile();
-          }}
-          className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100/80 transition-colors cursor-pointer"
-        >
-          <BookOpen className="w-4 h-4 text-indigo-600" />
-          <span>Admin Studio</span>
-        </Link>
+        {/* Admin Dashboard Direct Link (visible if user is mentor or for testing) */}
+        {currentUser?.role === 'GUARDIAN' && (
+          <Link
+            href="/admin"
+            onClick={() => {
+              if (isDrawer && onCloseMobile) onCloseMobile();
+            }}
+            className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100/80 transition-colors cursor-pointer"
+          >
+            <BookOpen className="w-4 h-4 text-indigo-600" />
+            <span>Admin Studio</span>
+          </Link>
+        )}
 
         {/* Log Out */}
         <button
@@ -223,6 +252,7 @@ const SidebarBody: React.FC<SidebarBodyProps> = ({
 };
 
 export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
+  currentUser,
   activeTab,
   onChangeTab,
   onOpenGuardian,
@@ -247,6 +277,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
       {/* 1. PERSISTENT DESKTOP SIDEBAR (Visible on lg and up) */}
       <aside className="hidden lg:flex w-64 bg-white min-h-screen border-r border-slate-200/80 p-5 flex-col justify-between flex-shrink-0 z-30 shadow-sm">
         <SidebarBody
+          currentUser={currentUser}
           activeTab={activeTab}
           onChangeTab={onChangeTab}
           onOpenGuardian={onOpenGuardian}
@@ -278,6 +309,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
               className="relative w-72 max-w-[85vw] h-full bg-white border-r border-slate-200 p-5 flex flex-col justify-between z-50 shadow-2xl overflow-y-auto"
             >
               <SidebarBody
+                currentUser={currentUser}
                 activeTab={activeTab}
                 onChangeTab={onChangeTab}
                 onOpenGuardian={onOpenGuardian}

@@ -2,7 +2,7 @@ export type UserRole = 'STUDENT' | 'GUARDIAN';
 
 export interface User {
   id: string;
-  email: string;
+  email?: string | null;
   name: string;
   role: UserRole;
   grade?: string;

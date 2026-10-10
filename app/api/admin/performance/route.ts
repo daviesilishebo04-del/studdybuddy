@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
 
     const url = request.nextUrl;
     const weekParam = url.searchParams.get('week') || url.searchParams.get('weekStart');
+    const studentId = url.searchParams.get('studentId') || 'student-alex';
 
     // Default to current week's Monday
     const now = new Date();
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     const weekStart = weekParam ?? monday.toISOString().split('T')[0];
 
-    const performance = await adminRepository.getWeeklyPerformance('student-alex', weekStart);
+    const performance = await adminRepository.getWeeklyPerformance(studentId, weekStart);
     return NextResponse.json(performance);
   } catch (error) {
     console.error('Admin performance error:', error);

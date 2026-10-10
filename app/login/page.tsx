@@ -4,42 +4,53 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   BookOpen,
-  Flame,
-  Shield,
   User,
+  Lock,
   ArrowRight,
   Eye,
   EyeOff,
-  CheckCircle2,
+  Target,
+  TrendingUp,
+  Award,
+  Sparkles,
   AlertCircle,
   Loader2,
-  Gamepad2,
-  Target,
-  Sparkles,
+  Info,
+  CheckCircle2
 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [identifier, setIdentifier] = useState('alex');
-  const [password, setPassword] = useState('••••••••');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showForgotNotice, setShowForgotNotice] = useState(false);
 
-  const handleLogin = async (overrideUserId?: string) => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError(null);
+
+    const cleanUsername = username.trim();
+    const cleanPassword = password.trim();
+
+    if (!cleanUsername || !cleanPassword) {
+      setError('Please enter your name and password.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const payload = overrideUserId
-        ? { userId: overrideUserId }
-        : { identifier, password };
-
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          username: cleanUsername,
+          password: cleanPassword,
+        }),
       });
 
       const data = await res.json();
@@ -48,297 +59,279 @@ export default function LoginPage() {
         throw new Error(data.error || 'Login failed. Please check your credentials.');
       }
 
-      // Route to appropriate dashboard
+      // Route based on role
       router.push(data.redirectUrl || '/');
     } catch (err: any) {
-      console.error('Login error:', err);
-      setError(err.message || 'Something went wrong. Please try again.');
+      setError(err.message || 'Something went wrong. Please check your connection.');
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#d7e6fc] flex flex-col justify-between p-4 sm:p-6 lg:p-10 font-sans text-slate-900 selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-[#072B6B] text-white flex flex-col justify-between selection:bg-amber-400 selection:text-slate-950 font-sans">
       
-      {/* Top Header Bar */}
-      <header className="w-full max-w-5xl mx-auto flex items-center justify-between pb-6 border-b-2 border-slate-900">
+      {/* ── TOP NAV BAR ── */}
+      <header className="w-full max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-700 text-white flex items-center justify-center font-black text-lg border-2 border-slate-900">
-            <BookOpen className="w-5 h-5 stroke-[2.5]" />
+          <div className="w-10 h-10 rounded-xl bg-blue-600 border border-blue-400 flex items-center justify-center text-white">
+            <BookOpen size={22} className="stroke-[2.5]" />
           </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-black text-slate-950 uppercase tracking-tight leading-none">
-              StudyBuddy
-            </span>
-            <span className="text-[10px] font-black text-blue-800 uppercase tracking-wider mt-1">
-              Interactive Study Station
-            </span>
+          <div>
+            <h1 className="text-xl font-black tracking-tight text-white leading-none">StudyBuddy</h1>
+            <p className="text-[11px] font-semibold text-blue-200 uppercase tracking-widest mt-1">
+              Learn • Practice • Grow
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="hidden sm:inline-block px-3 py-1 bg-white border-2 border-slate-900 text-xs font-black uppercase tracking-wider">
-            Grade 8 • Form One
-          </span>
-          <div className="px-2.5 py-1 bg-amber-400 border-2 border-slate-900 text-slate-950 text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
-            <Flame className="w-4 h-4 fill-amber-950 text-amber-950" />
-            <span>5-Day Streak</span>
-          </div>
+        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-blue-400/40 bg-blue-900/60 text-xs font-bold text-blue-200">
+          <span>Grade 8 / Form One Study Portal</span>
         </div>
       </header>
 
-      {/* Main Terminal Split-Pane Container */}
-      <main className="w-full max-w-5xl mx-auto my-auto py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 border-2 border-slate-900 bg-white">
+      {/* ── MAIN CONTENT (Split-Pane on Desktop, Stacked on Mobile) ── */}
+      <main className="w-full max-w-7xl mx-auto px-6 py-6 sm:py-12 flex-1 flex items-center justify-center">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
           
-          {/* ========================================================= */}
-          {/* LEFT PANE: "Mature Kid / Game Terminal" Quest Showcase    */}
-          {/* ========================================================= */}
-          <div className="lg:col-span-5 bg-slate-900 text-white p-6 sm:p-8 flex flex-col justify-between border-b-2 lg:border-b-0 lg:border-r-2 border-slate-900">
-            <div className="space-y-6">
+          {/* ── LEFT COLUMN: Motivational Value Proposition ── */}
+          <div className="lg:col-span-7 flex flex-col space-y-8">
+            
+            {/* Champ Pill */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-blue-900 border border-blue-400/60 text-amber-300 text-xs font-black tracking-wider uppercase w-fit">
+              <span>HEY CHAMP!</span>
+              <Sparkles size={14} className="text-amber-400 fill-amber-400" />
+            </div>
+
+            {/* Main Headline */}
+            <div className="space-y-3">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-[1.15]">
+                Welcome back, <br />
+                Your goals are <span className="text-amber-400 underline decoration-amber-400 decoration-4 underline-offset-6">within reach!</span>
+              </h2>
+              <p className="text-blue-100 text-sm sm:text-base max-w-lg font-medium leading-relaxed">
+                Log in to continue your learning journey and make progress, one step at a time.
+              </p>
+            </div>
+
+            {/* 4 Feature Value Pillars Strip (Flat, High-Contrast) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
               
-              {/* Terminal Badge */}
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-600 text-white text-xs font-black uppercase tracking-widest border border-blue-400">
-                <Gamepad2 className="w-4 h-4" />
-                <span>Player Station 01</span>
-              </div>
-
-              {/* Punchy Hero Typography */}
-              <div className="space-y-2">
-                <h1 className="text-3xl sm:text-4xl font-black tracking-tight leading-none uppercase">
-                  Ready to <span className="text-amber-400">Level Up</span> Today?
-                </h1>
-                <p className="text-xs sm:text-sm font-semibold text-slate-300 leading-relaxed">
-                  Log in to defend your study streak, complete today&apos;s retrieval quests, and master your syllabus topics.
-                </p>
-              </div>
-
-              {/* Active Quest Cards (Gamified but mature pre-teen focus) */}
-              <div className="space-y-3 pt-2">
-                <div className="p-3.5 bg-slate-800 border-2 border-slate-700">
-                  <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider text-slate-400 mb-1">
-                    <span>Active Target</span>
-                    <span className="text-amber-400">Due Today</span>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
-                      M
-                    </div>
-                    <div>
-                      <p className="text-xs font-black text-white">Mathematics: Linear Equations</p>
-                      <p className="text-[10px] font-semibold text-slate-400">Form 1 Algebra Review</p>
-                    </div>
-                  </div>
+              {/* Pillar 1: Learn */}
+              <div className="bg-blue-900/70 border border-blue-400/50 rounded-xl p-3.5 flex flex-col items-center text-center">
+                <div className="w-10 h-10 rounded-lg bg-blue-600 border border-blue-300 flex items-center justify-center text-white mb-2">
+                  <BookOpen size={20} />
                 </div>
-
-                <div className="p-3.5 bg-slate-800 border-2 border-slate-700">
-                  <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider text-slate-400 mb-1">
-                    <span>Secondary Target</span>
-                    <span className="text-emerald-400">Ready</span>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
-                      L
-                    </div>
-                    <div>
-                      <p className="text-xs font-black text-white">Literature: Theme &amp; Meaning</p>
-                      <p className="text-[10px] font-semibold text-slate-400">Poetry Comprehension</p>
-                    </div>
-                  </div>
-                </div>
+                <span className="font-bold text-xs text-white">Learn</span>
+                <span className="text-[10px] text-blue-200 mt-0.5">new concepts</span>
               </div>
+
+              {/* Pillar 2: Practice */}
+              <div className="bg-blue-900/70 border border-blue-400/50 rounded-xl p-3.5 flex flex-col items-center text-center">
+                <div className="w-10 h-10 rounded-lg bg-purple-600 border border-purple-300 flex items-center justify-center text-white mb-2">
+                  <Target size={20} />
+                </div>
+                <span className="font-bold text-xs text-white">Practice</span>
+                <span className="text-[10px] text-blue-200 mt-0.5">with quizzes</span>
+              </div>
+
+              {/* Pillar 3: Track */}
+              <div className="bg-blue-900/70 border border-blue-400/50 rounded-xl p-3.5 flex flex-col items-center text-center">
+                <div className="w-10 h-10 rounded-lg bg-emerald-600 border border-emerald-300 flex items-center justify-center text-white mb-2">
+                  <TrendingUp size={20} />
+                </div>
+                <span className="font-bold text-xs text-white">Track</span>
+                <span className="text-[10px] text-blue-200 mt-0.5">your progress</span>
+              </div>
+
+              {/* Pillar 4: Achieve */}
+              <div className="bg-blue-900/70 border border-blue-400/50 rounded-xl p-3.5 flex flex-col items-center text-center">
+                <div className="w-10 h-10 rounded-lg bg-amber-500 border border-amber-300 flex items-center justify-center text-slate-950 mb-2">
+                  <Award size={20} className="fill-slate-950" />
+                </div>
+                <span className="font-bold text-xs text-white">Achieve</span>
+                <span className="text-[10px] text-blue-200 mt-0.5">your goals</span>
+              </div>
+
             </div>
 
-            {/* Streak Status Footnote */}
-            <div className="mt-8 pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-bold text-slate-400">
-              <span className="uppercase tracking-wider">Streak Defense</span>
-              <span className="text-amber-400 font-black flex items-center gap-1">
-                <Flame className="w-3.5 h-3.5 fill-amber-400" />
-                Active • 5 Days
-              </span>
-            </div>
           </div>
 
-          {/* ========================================================= */}
-          {/* RIGHT PANE: Authentication Card & One-Click Player Select */}
-          {/* ========================================================= */}
-          <div className="lg:col-span-7 p-6 sm:p-8 sm:py-10 flex flex-col justify-between">
-            <div>
-              {/* Form Title */}
+          {/* ── RIGHT COLUMN: High-Contrast Auth Card ── */}
+          <div className="lg:col-span-5 w-full max-w-md mx-auto">
+            <div className="bg-blue-900 border-2 border-blue-400 rounded-2xl p-6 sm:p-8">
+              
               <div className="mb-6">
-                <h2 className="text-2xl font-black text-slate-950 uppercase tracking-tight">
-                  Sign In to StudyStation
-                </h2>
-                <p className="text-xs font-bold text-slate-600 mt-1">
-                  Enter your student credentials or select your profile below.
+                <h3 className="text-2xl font-black text-white tracking-tight">Log In</h3>
+                <p className="text-xs font-semibold text-blue-200 mt-1">
+                  Continue your study journey
                 </p>
               </div>
 
-              {/* Error Banner */}
               {error && (
-                <div className="mb-5 p-3.5 bg-rose-50 border-2 border-rose-600 flex items-center gap-2.5 text-rose-900 text-xs font-black">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0 stroke-[2.5]" />
+                <div className="mb-5 p-3 rounded-lg bg-red-950 border border-red-500 text-red-200 text-xs font-bold flex items-start gap-2">
+                  <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
                   <span>{error}</span>
                 </div>
               )}
 
-              {/* Login Form */}
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleLogin();
-                }}
-                className="space-y-4"
-              >
-                {/* Identifier Input */}
+              {showForgotNotice && (
+                <div className="mb-5 p-3 rounded-lg bg-amber-950 border border-amber-400 text-amber-200 text-xs font-semibold flex items-start gap-2">
+                  <Info size={16} className="text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Forgot your password?</span>
+                    <p className="mt-0.5 text-[11px] text-amber-100">
+                      Ask your mentor in person. They can view your student profile and set a new password for you from the Mentor Studio.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleLogin} className="space-y-4">
+                
+                {/* Username Input */}
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-900 mb-1.5">
-                    Student Username or Email
+                  <label className="block text-xs font-bold text-blue-100 uppercase tracking-wider mb-1.5">
+                    Your Name or Username
                   </label>
-                  <input
-                    type="text"
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="e.g. alex or student@studybuddy.local"
-                    className="w-full px-4 py-3 border-2 border-slate-300 focus:border-blue-700 focus:outline-none text-sm font-bold text-slate-950 placeholder:text-slate-400 bg-white"
-                    required
-                  />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-blue-300">
+                      <User size={18} />
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="e.g. Nisa or Mentor Davie"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-blue-950 border border-blue-400 text-white placeholder:text-blue-400/60 text-sm font-semibold focus:outline-hidden focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition"
+                    />
+                  </div>
                 </div>
 
-                {/* Password / Passcode Input with Visibility Toggle */}
+                {/* Password Input */}
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-900">
-                      Passcode or Password
-                    </label>
-                    <span className="text-[11px] font-bold text-blue-700 cursor-pointer hover:underline">
-                      Need help?
-                    </span>
-                  </div>
+                  <label className="block text-xs font-bold text-blue-100 uppercase tracking-wider mb-1.5">
+                    Password
+                  </label>
                   <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-blue-300">
+                      <Lock size={18} />
+                    </div>
                     <input
                       type={showPassword ? 'text' : 'password'}
+                      required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Enter your passcode"
-                      className="w-full px-4 py-3 border-2 border-slate-300 focus:border-blue-700 focus:outline-none text-sm font-bold text-slate-950 placeholder:text-slate-400 bg-white pr-12"
-                      required
+                      className="w-full pl-10 pr-11 py-3 rounded-xl bg-blue-950 border border-blue-400 text-white placeholder:text-blue-400/60 text-sm font-semibold focus:outline-hidden focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-900 p-1 cursor-pointer"
-                      aria-label={showPassword ? 'Hide passcode' : 'Show passcode'}
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-blue-300 hover:text-white transition"
+                      aria-label="Toggle password visibility"
                     >
-                      {showPassword ? (
-                        <EyeOff className="w-4 h-4 stroke-[2.2]" />
-                      ) : (
-                        <Eye className="w-4 h-4 stroke-[2.2]" />
-                      )}
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
 
-                {/* Remember Me Checkbox */}
-                <div className="flex items-center justify-between pt-1">
-                  <label className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-slate-700 select-none">
+                {/* Quick Profile Fillers for Brother & Mentor */}
+                <div className="pt-1">
+                  <span className="text-[10px] font-bold text-blue-300 uppercase tracking-wider block mb-1.5">
+                    Quick Select Profile:
+                  </span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUsername('Nisa');
+                        setPassword('nisa123');
+                      }}
+                      className="py-1.5 px-2 rounded-lg bg-blue-950/80 border border-blue-400/60 hover:border-amber-400 text-[11px] font-bold text-left transition flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span className="w-5 h-5 rounded-md bg-blue-600 text-white flex items-center justify-center font-black text-[10px]">
+                        N
+                      </span>
+                      <span className="truncate">Nisa (Pupil)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUsername('Mentor Davie');
+                        setPassword('mentor123');
+                      }}
+                      className="py-1.5 px-2 rounded-lg bg-blue-950/80 border border-blue-400/60 hover:border-amber-400 text-[11px] font-bold text-left transition flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span className="w-5 h-5 rounded-md bg-amber-500 text-slate-950 flex items-center justify-center font-black text-[10px]">
+                        D
+                      </span>
+                      <span className="truncate">Mentor Davie</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Remember Me & Forgot Password Row */}
+                <div className="flex items-center justify-between text-xs pt-1">
+                  <label className="flex items-center gap-2 cursor-pointer text-blue-200 hover:text-white select-none">
                     <input
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 border-2 border-slate-900 rounded-none accent-blue-700 cursor-pointer"
+                      className="w-4 h-4 rounded border-blue-400 bg-blue-950 text-blue-600 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600"
                     />
-                    <span>Remember this station</span>
+                    <span className="font-semibold">Remember me</span>
                   </label>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotNotice(!showForgotNotice)}
+                    className="font-semibold text-blue-300 hover:text-amber-400 transition underline underline-offset-2"
+                  >
+                    Forgot password?
+                  </button>
                 </div>
 
-                {/* Submit Action Button */}
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 px-6 bg-blue-700 hover:bg-blue-800 text-white font-black text-xs uppercase tracking-widest border-2 border-blue-700 transition cursor-pointer disabled:opacity-50 mt-2"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>INITIALIZING SESSION...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>ENTER STUDY STATION</span>
-                      <ArrowRight className="w-4 h-4 stroke-[3]" />
-                    </>
-                  )}
-                </button>
+                {/* Log In Button (Flat, High-Contrast Solid) */}
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-black text-sm tracking-wide border-2 border-blue-300 flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        <span>Logging in...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Log In</span>
+                        <ArrowRight size={18} className="stroke-[2.5]" />
+                      </>
+                    )}
+                  </button>
+                </div>
+
               </form>
 
-              {/* ========================================================= */}
-              {/* Quick Player Switcher (One-Click Launch Tray)              */}
-              {/* ========================================================= */}
-              <div className="mt-8 pt-6 border-t-2 border-slate-200">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-black uppercase tracking-wider text-slate-700">
-                    Quick Launch Player
-                  </span>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase">
-                    Demo Profiles
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Player 1: Alex */}
-                  <button
-                    type="button"
-                    onClick={() => handleLogin('student-alex')}
-                    disabled={isLoading}
-                    className="p-3 border-2 border-slate-900 bg-white hover:bg-blue-50 text-left transition cursor-pointer flex items-center gap-3 group"
-                  >
-                    <div className="w-9 h-9 bg-blue-700 text-white font-black text-xs flex items-center justify-center border border-slate-900 group-hover:scale-105 transition-transform flex-shrink-0">
-                      AM
-                    </div>
-                    <div className="overflow-hidden">
-                      <p className="text-xs font-black text-slate-950 truncate">Alex (Champ)</p>
-                      <p className="text-[10px] font-extrabold text-blue-700 uppercase tracking-wider">
-                        Grade 8 • Pupil
-                      </p>
-                    </div>
-                  </button>
-
-                  {/* Player 2: Mentor Davie */}
-                  <button
-                    type="button"
-                    onClick={() => handleLogin('guardian-davie')}
-                    disabled={isLoading}
-                    className="p-3 border-2 border-slate-900 bg-white hover:bg-slate-100 text-left transition cursor-pointer flex items-center gap-3 group"
-                  >
-                    <div className="w-9 h-9 bg-slate-900 text-white font-black text-xs flex items-center justify-center border border-slate-900 group-hover:scale-105 transition-transform flex-shrink-0">
-                      <Shield className="w-4 h-4" />
-                    </div>
-                    <div className="overflow-hidden">
-                      <p className="text-xs font-black text-slate-950 truncate">Mentor Davie</p>
-                      <p className="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">
-                        Guardian • Admin
-                      </p>
-                    </div>
-                  </button>
-                </div>
+              {/* Bottom Guidance Note */}
+              <div className="mt-6 pt-5 border-t border-blue-800/80 text-center">
+                <p className="text-[11px] font-semibold text-blue-300">
+                  Built with care by Mentor Davie for Nisa Mubuwa Mboloma.
+                </p>
               </div>
 
             </div>
-
-            {/* Footer Note */}
-            <p className="text-[11px] font-bold text-slate-500 text-center mt-6">
-              StudyBuddy Secure Learning Environment • Version 1.0
-            </p>
           </div>
 
         </div>
       </main>
 
-      {/* Bottom Footer */}
-      <footer className="w-full max-w-5xl mx-auto pt-4 border-t-2 border-slate-900 flex flex-col sm:flex-row items-center justify-between text-xs font-black uppercase text-slate-700 gap-2">
-        <span>© 2026 StudyBuddy. Built for Alex.</span>
-        <span>Grade 8 Secondary Curriculum System</span>
+      {/* ── FOOTER ── */}
+      <footer className="w-full max-w-7xl mx-auto px-6 py-6 text-center text-xs font-semibold text-blue-300/70">
+        <p>StudyBuddy &bull; Personalized Learning &bull; Built for Excellence</p>
       </footer>
 
     </div>

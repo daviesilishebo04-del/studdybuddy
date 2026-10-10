@@ -1,13 +1,18 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { adminRepository } from '@/backend/repositories/adminRepository';
 import { studyRepository } from '@/backend/repositories/studyRepository';
 
-export async function GET() {
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: NextRequest) {
   try {
     // Ensure seed data exists
     await studyRepository.getSubjects();
 
-    const overview = await adminRepository.getStudentOverview('student-alex');
+    const { searchParams } = new URL(request.url);
+    const studentId = searchParams.get('studentId') || 'student-alex';
+
+    const overview = await adminRepository.getStudentOverview(studentId);
     return NextResponse.json(overview);
   } catch (error) {
     console.error('Admin overview error:', error);

@@ -2,6 +2,14 @@ import { Subject, Topic, Question, StreakState, User } from '../domain/types';
 
 export const SEED_USERS: User[] = [
   {
+    id: 'student-nisa',
+    email: 'nisa@studybuddy.local',
+    name: 'Nisa Mubuwa Mboloma',
+    role: 'STUDENT',
+    grade: 'Grade 8 / Form One',
+    createdAt: new Date().toISOString(),
+  },
+  {
     id: 'student-alex',
     email: 'student@studybuddy.local',
     name: 'Alex (Champ)',

@@ -13,6 +13,11 @@ import {
   Menu,
   X,
   User,
+  UserPlus,
+  ChevronDown,
+  LogOut,
+  Camera,
+  Loader2,
 } from 'lucide-react';
 import {
   StudentOverview,
@@ -25,12 +30,20 @@ import { TopicManager } from '@/frontend/components/admin/TopicManager';
 import { QuizBuilder } from '@/frontend/components/admin/QuizBuilder';
 import { ShortAnswerBuilder } from '@/frontend/components/admin/ShortAnswerBuilder';
 import { CurriculumInbox } from '@/frontend/components/admin/CurriculumInbox';
-import { Camera } from 'lucide-react';
+import { RegisterStudentModal } from '@/frontend/components/admin/RegisterStudentModal';
 
 export type AdminTab = 'overview' | 'inbox' | 'topics' | 'assessments';
 export type AssessmentSubTab = 'mcq' | 'short_answer';
 
+export interface StudentItem {
+  id: string;
+  name: string;
+  grade: string;
+}
+
 interface AdminDashboardProps {
+  mentorName?: string;
+  initialStudents?: StudentItem[];
   initialOverview: StudentOverview;
   initialPerformance: WeeklyPerformance;
   initialTopics: TopicWithCounts[];
@@ -38,18 +51,67 @@ interface AdminDashboardProps {
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
+  mentorName = 'Mentor Davie',
+  initialStudents = [],
   initialOverview,
   initialPerformance,
   initialTopics,
   subjects,
 }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
-  const [assessmentSubTab, setAssessmentSubTab] =
-    useState<AssessmentSubTab>('mcq');
+  const [assessmentSubTab, setAssessmentSubTab] = useState<AssessmentSubTab>('mcq');
   const [targetTopicId, setTargetTopicId] = useState<string>(
     initialTopics.length > 0 ? initialTopics[0].id : ''
   );
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+
+  // Dynamic students & active pupil state
+  const [students, setStudents] = useState<StudentItem[]>(
+    initialStudents.length > 0
+      ? initialStudents
+      : [{ id: initialOverview.id || 'student-alex', name: initialOverview.name, grade: initialOverview.grade }]
+  );
+  const [activeStudentId, setActiveStudentId] = useState<string>(
+    initialStudents.length > 0 ? initialStudents[0].id : 'student-alex'
+  );
+  const [overview, setOverview] = useState<StudentOverview>(initialOverview);
+  const [performance, setPerformance] = useState<WeeklyPerformance>(initialPerformance);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false);
+  const [isLoadingStudent, setIsLoadingStudent] = useState(false);
+
+  const activeStudent = students.find((s) => s.id === activeStudentId) || students[0];
+
+  const handleSelectStudent = async (studentId: string) => {
+    setActiveStudentId(studentId);
+    setIsStudentDropdownOpen(false);
+    setIsLoadingStudent(true);
+
+    try {
+      const [resOverview, resPerf] = await Promise.all([
+        fetch(`/api/admin/overview?studentId=${studentId}`),
+        fetch(`/api/admin/performance?studentId=${studentId}`),
+      ]);
+
+      if (resOverview.ok) {
+        const dataOverview = await resOverview.json();
+        setOverview(dataOverview);
+      }
+      if (resPerf.ok) {
+        const dataPerf = await resPerf.json();
+        setPerformance(dataPerf);
+      }
+    } catch (err) {
+      console.error('Failed to load student data:', err);
+    } finally {
+      setIsLoadingStudent(false);
+    }
+  };
+
+  const handleStudentRegistered = (newStudent: StudentItem) => {
+    setStudents((prev) => [newStudent, ...prev.filter((s) => s.id !== newStudent.id)]);
+    handleSelectStudent(newStudent.id);
+  };
 
   const handleNavigateToMCQ = (topicId: string) => {
     setTargetTopicId(topicId);
@@ -82,7 +144,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               Mentor Studio
             </span>
             <span className="text-[10px] font-extrabold text-blue-700 block uppercase tracking-wider">
-              Admin Hub
+              {mentorName}
             </span>
           </div>
         </div>
@@ -113,24 +175,80 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 Mentor Studio
               </span>
               <span className="text-[10px] font-extrabold text-blue-700 uppercase tracking-wider">
-                Admin &amp; Curriculum
+                {mentorName}
               </span>
             </div>
           </div>
 
-          {/* Pupil Status Card */}
-          <div className="p-3 rounded-md bg-blue-50/80 border border-blue-200 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-md bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
-              <User className="w-4 h-4" />
-            </div>
-            <div className="overflow-hidden">
-              <span className="text-xs font-black text-slate-950 block truncate">
-                {initialOverview.name}
+          {/* Pupil Selector Card with Dropdown & Registration */}
+          <div className="p-3 rounded-md bg-blue-50/80 border border-blue-200 relative">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-black text-blue-900 uppercase tracking-wider">
+                Active Pupil
               </span>
-              <span className="text-[10px] font-bold text-blue-700 block">
-                {initialOverview.grade} • Pupil
-              </span>
+              <button
+                onClick={() => setIsRegisterModalOpen(true)}
+                className="flex items-center gap-1 text-[11px] font-black text-blue-700 hover:text-blue-900 transition-colors cursor-pointer"
+                title="Register a new pupil"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>+ Add</span>
+              </button>
             </div>
+
+            <button
+              onClick={() => setIsStudentDropdownOpen(!isStudentDropdownOpen)}
+              className="w-full p-2 rounded-md bg-white border border-blue-300 flex items-center justify-between text-left hover:border-blue-500 transition-colors cursor-pointer shadow-2xs"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-7 h-7 rounded-sm bg-blue-600 text-white font-black text-xs flex items-center justify-center flex-shrink-0">
+                  {isLoadingStudent ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    activeStudent?.name?.[0]?.toUpperCase() || 'P'
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-xs font-black text-slate-950 block truncate">
+                    {activeStudent?.name || 'Select Student'}
+                  </span>
+                  <span className="text-[10px] font-bold text-blue-700 block truncate">
+                    {activeStudent?.grade || 'Grade 8'}
+                  </span>
+                </div>
+              </div>
+              <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0 ml-1" />
+            </button>
+
+            {/* Dropdown Menu */}
+            {isStudentDropdownOpen && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-slate-300 rounded-md p-1.5 shadow-xl z-50 max-h-48 overflow-y-auto">
+                {students.map((student) => (
+                  <button
+                    key={student.id}
+                    onClick={() => handleSelectStudent(student.id)}
+                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded text-xs font-bold transition-colors text-left cursor-pointer ${
+                      student.id === activeStudentId
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-800 hover:bg-blue-50'
+                    }`}
+                  >
+                    <span className="truncate">{student.name}</span>
+                    <span className="text-[10px] opacity-75">{student.grade}</span>
+                  </button>
+                ))}
+                <button
+                  onClick={() => {
+                    setIsStudentDropdownOpen(false);
+                    setIsRegisterModalOpen(true);
+                  }}
+                  className="w-full flex items-center gap-2 px-2.5 py-2 mt-1 rounded text-xs font-black text-blue-700 hover:bg-blue-50 border-t border-slate-200 cursor-pointer"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>+ Register New Student</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Nav Links */}
@@ -147,7 +265,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               }`}
             >
               <TrendingUp className="w-4 h-4" />
-              <span>Alex&apos;s Progress</span>
+              <span>{activeStudent?.name ? `${activeStudent.name.split(' ')[0]}'s Progress` : 'Pupil Progress'}</span>
             </button>
 
             <button
@@ -197,15 +315,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </nav>
         </div>
 
-        {/* Bottom Sidebar Action: Back to Student View */}
-        <div className="pt-5 border-t border-blue-200/80">
+        {/* Bottom Sidebar Action: Pupil View + Log Out */}
+        <div className="pt-4 border-t border-blue-200/80 space-y-2">
           <Link
             href="/"
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-white hover:bg-blue-50 text-slate-800 border border-blue-300/80 text-xs font-bold transition cursor-pointer shadow-2xs"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-white hover:bg-blue-50 text-slate-800 border border-blue-300/80 text-xs font-bold transition cursor-pointer shadow-2xs"
           >
             <span>Open Pupil View</span>
             <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
           </Link>
+
+          <button
+            onClick={async () => {
+              try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+              } catch (err) {
+                console.error('Logout error:', err);
+              }
+              window.location.href = '/login';
+            }}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-transparent text-xs font-bold transition cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Log out</span>
+          </button>
         </div>
       </aside>
 
@@ -214,8 +347,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {/* Render Tab 1: Overview */}
         {activeTab === 'overview' && (
           <PerformanceOverview
-            overview={initialOverview}
-            initialPerformance={initialPerformance}
+            overview={overview}
+            initialPerformance={performance}
           />
         )}
 
@@ -285,6 +418,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           />
         )}
       </main>
+
+      {/* Register New Student Modal */}
+      <RegisterStudentModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+        onStudentRegistered={handleStudentRegistered}
+      />
     </div>
   );
 };

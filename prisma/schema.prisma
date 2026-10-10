@@ -25,8 +25,9 @@ enum QuestionType {
 
 model User {
   id                    String    @id @default(cuid())
-  email                 String    @unique
-  name                  String
+  email                 String?   @unique
+  name                  String    @unique
+  passwordHash          String?
   role                  Role      @default(STUDENT)
   grade                 String?
   onboardingCompletedAt DateTime?
@@ -38,6 +39,7 @@ model User {
   priorities            SubjectPriority[]
   timetableSlots        TimetableSlot[]
   curriculumSubmissions CurriculumSubmission[]
+  streak                Streak?
 }
 
 model Subject {
@@ -161,6 +163,8 @@ model Streak {
   currentStreak  Int       @default(0)
   longestStreak  Int       @default(0)
   lastActiveDate DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum SubmissionStatus {

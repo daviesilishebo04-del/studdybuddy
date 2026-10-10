@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma';
+import bcrypt from 'bcryptjs';
 import {
   Subject,
   Topic,
@@ -30,16 +31,25 @@ class RealPrismaStudyRepository {
 
     this.seedPromise = (async () => {
       try {
+        const defaultMentorHash = await bcrypt.hash('mentor123', 10);
+        const defaultNisaHash = await bcrypt.hash('nisa123', 10);
+
         for (const u of SEED_USERS) {
+          const initialHash = u.role === 'GUARDIAN' ? defaultMentorHash : defaultNisaHash;
           await prisma.user.upsert({
             where: { id: u.id },
-            update: {},
+            update: {
+              name: u.name,
+              grade: u.grade,
+              passwordHash: initialHash,
+            },
             create: {
               id: u.id,
               email: u.email,
               name: u.name,
               role: u.role,
               grade: u.grade,
+              passwordHash: initialHash,
             },
           });
         }
@@ -98,37 +108,39 @@ class RealPrismaStudyRepository {
           });
         }
 
-        await prisma.streak.upsert({
-          where: { userId: 'student-alex' },
-          update: {},
-          create: {
-            userId: 'student-alex',
-            currentStreak: INITIAL_STREAK.currentStreak,
-            longestStreak: INITIAL_STREAK.longestStreak,
-          },
-        });
+        for (const studentId of ['student-nisa', 'student-alex']) {
+          await prisma.streak.upsert({
+            where: { userId: studentId },
+            update: {},
+            create: {
+              userId: studentId,
+              currentStreak: INITIAL_STREAK.currentStreak,
+              longestStreak: INITIAL_STREAK.longestStreak,
+            },
+          });
 
-        await prisma.subjectPriority.upsert({
-          where: { userId_subjectId: { userId: 'student-alex', subjectId: 'subj-math' } },
-          update: {},
-          create: {
-            userId: 'student-alex',
-            subjectId: 'subj-math',
-            priority: INITIAL_PRIORITY_HARD,
-            lastAccuracies: [],
-          },
-        });
+          await prisma.subjectPriority.upsert({
+            where: { userId_subjectId: { userId: studentId, subjectId: 'subj-math' } },
+            update: {},
+            create: {
+              userId: studentId,
+              subjectId: 'subj-math',
+              priority: INITIAL_PRIORITY_HARD,
+              lastAccuracies: [],
+            },
+          });
 
-        await prisma.subjectPriority.upsert({
-          where: { userId_subjectId: { userId: 'student-alex', subjectId: 'subj-lit' } },
-          update: {},
-          create: {
-            userId: 'student-alex',
-            subjectId: 'subj-lit',
-            priority: INITIAL_PRIORITY_NORMAL,
-            lastAccuracies: [],
-          },
-        });
+          await prisma.subjectPriority.upsert({
+            where: { userId_subjectId: { userId: studentId, subjectId: 'subj-lit' } },
+            update: {},
+            create: {
+              userId: studentId,
+              subjectId: 'subj-lit',
+              priority: INITIAL_PRIORITY_NORMAL,
+              lastAccuracies: [],
+            },
+          });
+        }
 
         this.seeded = true;
       } catch (err) {
@@ -231,21 +243,23 @@ class RealPrismaStudyRepository {
     }));
   }
 
-  async getStreak(): Promise<StreakState> {
+  async getStreak(userId?: string): Promise<StreakState> {
     await this.ensureSeeded();
-    const streak = await prisma.streak.findUnique({ where: { userId: 'student-alex' } });
+    const targetUserId = userId || 'student-alex';
+    const streak = await prisma.streak.findUnique({ where: { userId: targetUserId } });
     return {
-      currentStreak: streak?.currentStreak ?? 5,
-      longestStreak: streak?.longestStreak ?? 7,
+      currentStreak: streak?.currentStreak ?? 0,
+      longestStreak: streak?.longestStreak ?? 0,
       days: INITIAL_STREAK.days,
     };
   }
 
-  async getTodayPlan(): Promise<TodayPlanSession[]> {
+  async getTodayPlan(userId?: string): Promise<TodayPlanSession[]> {
     await this.ensureSeeded();
+    const targetUserId = userId || 'student-alex';
     // Prioritization: check subject priorities in PostgreSQL to surface highest priority first
     const priorities = await prisma.subjectPriority.findMany({
-      where: { userId: 'student-alex' },
+      where: { userId: targetUserId },
       orderBy: { priority: 'desc' },
       include: { subject: true },
     });
