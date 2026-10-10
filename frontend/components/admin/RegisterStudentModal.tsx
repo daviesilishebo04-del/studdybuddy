@@ -74,8 +74,9 @@ export const RegisterStudentModal: React.FC<RegisterStudentModalProps> = ({
         setIsLoading(false);
         onClose();
       }, 900);
-    } catch (err: any) {
-      setError(err.message || 'Network error while registering student.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Network error while registering student.';
+      setError(msg);
       setIsLoading(false);
     }
   };

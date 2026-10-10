@@ -61,8 +61,9 @@ export default function LoginPage() {
 
       // Route based on role
       router.push(data.redirectUrl || '/');
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong. Please check your connection.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Something went wrong. Please check your connection.';
+      setError(msg);
       setIsLoading(false);
     }
   };

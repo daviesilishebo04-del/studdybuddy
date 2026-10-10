@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminRepository } from '@/backend/repositories/adminRepository';
+import { requireSession } from '@/backend/lib/auth';
 import { writeFile, unlink, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
+
+export const dynamic = 'force-dynamic';
 
 const VIDEOS_DIR = join(process.cwd(), 'public', 'videos');
 
@@ -22,6 +25,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireSession(['GUARDIAN']);
+    if (auth.error) return auth.error;
+
     const { id } = await params;
     await ensureVideosDir();
 
@@ -66,6 +72,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireSession(['GUARDIAN']);
+    if (auth.error) return auth.error;
+
     const { id } = await params;
 
     // Get current topic to find video path

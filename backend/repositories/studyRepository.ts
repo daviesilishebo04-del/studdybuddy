@@ -12,6 +12,7 @@ import {
   CurriculumSubmission,
   CreateSubmissionInput,
   SubmissionStatus,
+  MetacognitiveRating,
 } from '../domain/types';
 import {
   SEED_USERS,
@@ -365,7 +366,7 @@ class RealPrismaStudyRepository {
       totalQuestions: created.totalQuestions,
       correctCount: created.correctCount,
       durationSeconds: created.durationSeconds,
-      selfRating: created.selfRating as any,
+      selfRating: created.selfRating ? (created.selfRating as MetacognitiveRating) : undefined,
       isWeekendReview: created.isWeekendReview,
       completedAt: created.completedAt.toISOString(),
       answers: created.answers.map((ans) => ({
@@ -393,7 +394,7 @@ class RealPrismaStudyRepository {
       totalQuestions: a.totalQuestions,
       correctCount: a.correctCount,
       durationSeconds: a.durationSeconds,
-      selfRating: a.selfRating as any,
+      selfRating: a.selfRating ? (a.selfRating as MetacognitiveRating) : undefined,
       isWeekendReview: a.isWeekendReview,
       completedAt: a.completedAt.toISOString(),
       answers: a.answers.map((ans) => ({

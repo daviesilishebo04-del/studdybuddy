@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminRepository } from '@/backend/repositories/adminRepository';
+import { requireSession } from '@/backend/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 /**
  * GET: List questions for a topic, optionally filtered by type.
@@ -7,6 +10,9 @@ import { adminRepository } from '@/backend/repositories/adminRepository';
  */
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireSession(['GUARDIAN']);
+    if (auth.error) return auth.error;
+
     const { searchParams } = new URL(request.url);
     const topicId = searchParams.get('topicId');
     const type = searchParams.get('type') as 'MCQ' | 'SHORT_ANSWER' | null;
@@ -37,6 +43,9 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireSession(['GUARDIAN']);
+    if (auth.error) return auth.error;
+
     const body = await request.json();
     const {
       topicId,

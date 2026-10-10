@@ -4,9 +4,11 @@ import {
   Topic,
   Question,
   QuizAttempt,
+  MetacognitiveRating,
 } from '../domain/types';
 
 export type { Subject, Topic, Question, QuizAttempt };
+
 
 // ─── Types for admin operations ───────────────────────────────────────
 
@@ -148,7 +150,7 @@ class AdminRepository {
         totalQuestions: a.totalQuestions,
         correctCount: a.correctCount,
         durationSeconds: a.durationSeconds,
-        selfRating: a.selfRating as any,
+        selfRating: a.selfRating ? (a.selfRating as MetacognitiveRating) : undefined,
         isWeekendReview: a.isWeekendReview,
         completedAt: a.completedAt.toISOString(),
         answers: a.answers.map((ans) => ({
@@ -309,7 +311,7 @@ class AdminRepository {
       slug: s.slug,
       name: s.name,
       icon: s.icon,
-      colorTheme: s.colorTheme as any,
+      colorTheme: s.colorTheme as Subject['colorTheme'],
       isAvailable: s.isAvailable,
     }));
   }

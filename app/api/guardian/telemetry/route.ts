@@ -1,28 +1,40 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { studyRepository } from '@/backend/repositories/studyRepository';
+import { requireSession } from '@/backend/lib/auth';
+import { prisma } from '@/backend/lib/prisma';
 
-export async function GET(req: Request) {
-  const role = req.headers.get('x-user-role') || 'STUDENT'; // default simulated student
+export const dynamic = 'force-dynamic';
 
-  // RBAC Barrier: Students cannot view Guardian telemetry
-  if (role !== 'GUARDIAN') {
-    return NextResponse.json(
-      {
-        error: "Access denied: Role 'STUDENT' is not authorized to access Guardian Telemetry. Guardian role required.",
-        code: 'FORBIDDEN_ROLE',
-      },
-      { status: 403 }
-    );
+export async function GET(req: NextRequest) {
+  const auth = await requireSession(['GUARDIAN']);
+  if (auth.error) return auth.error;
+
+  const { searchParams } = new URL(req.url);
+  let studentId = searchParams.get('studentId');
+
+  if (!studentId) {
+    const defaultStudent = await prisma.user.findFirst({
+      where: { role: 'STUDENT' },
+      select: { id: true, name: true, grade: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    studentId = defaultStudent?.id || 'student-alex';
   }
 
-  const attempts = await studyRepository.getQuizAttempts('student-alex');
-  const activeSeconds = await studyRepository.getTotalActiveStudySeconds('student-alex');
+  const student = await prisma.user.findUnique({
+    where: { id: studentId },
+    select: { name: true, grade: true },
+  });
+
+  const attempts = await studyRepository.getQuizAttempts(studentId);
+  const activeSeconds = await studyRepository.getTotalActiveStudySeconds(studentId);
 
   return NextResponse.json({
     success: true,
-    student: 'Alex (Grade 8 / Form One)',
+    student: student ? `${student.name} (${student.grade || 'Grade 8'})` : 'Student',
     totalActiveMinutes: Math.round(activeSeconds / 60),
     quizzesCompleted: attempts.length,
     attempts,
   });
 }
+

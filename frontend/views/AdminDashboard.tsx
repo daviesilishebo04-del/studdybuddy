@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   TrendingUp,
   BookOpen,
@@ -12,7 +13,6 @@ import {
   Type,
   Menu,
   X,
-  User,
   UserPlus,
   ChevronDown,
   LogOut,
@@ -58,6 +58,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   initialTopics,
   subjects,
 }) => {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [assessmentSubTab, setAssessmentSubTab] = useState<AssessmentSubTab>('mcq');
   const [targetTopicId, setTargetTopicId] = useState<string>(
@@ -332,7 +333,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               } catch (err) {
                 console.error('Logout error:', err);
               }
-              window.location.href = '/login';
+              router.push('/login');
             }}
             className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-transparent text-xs font-bold transition cursor-pointer"
           >
@@ -412,7 +413,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {/* Render Tab: Class Pages Inbox */}
         {activeTab === 'inbox' && (
           <CurriculumInbox
-            onNavigateToNotes={(_subjectId, _suggestedTitle) => {
+            onNavigateToNotes={() => {
               setActiveTab('topics');
             }}
           />

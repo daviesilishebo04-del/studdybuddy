@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Menu, Bell, Shield, ChevronDown, Camera } from 'lucide-react';
+import { Menu, Bell, ChevronDown, Camera } from 'lucide-react';
 import { DesktopSidebar, DesktopNavTab, CurrentUser } from '../components/DesktopSidebar';
 import { StreakWidget } from '../components/StreakWidget';
 import { TodayPlan } from '../components/TodayPlanCard';
@@ -49,7 +49,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const [isCurriculumOpen, setIsCurriculumOpen] = useState<boolean>(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(initialOnboardingNeeded);
   const [isTimetableOpen, setIsTimetableOpen] = useState<boolean>(false);
-  const [attempts, setAttempts] = useState<QuizAttempt[]>([]);
+  const [attempts] = useState<QuizAttempt[]>([]);
   const [activeStudySeconds, setActiveStudySeconds] = useState<number>(16200);
 
   const studentName = currentUser?.name || 'Alex';

@@ -169,9 +169,10 @@ export const CurriculumUploadModal: React.FC<CurriculumUploadModalProps> = ({
 
       setIsSuccess(true);
       if (onSuccess) onSuccess();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Submission error:', err);
-      setError(err.message || 'Submission failed. Please check your connection.');
+      const msg = err instanceof Error ? err.message : 'Submission failed. Please check your connection.';
+      setError(msg);
     } finally {
       setIsSubmitting(false);
     }

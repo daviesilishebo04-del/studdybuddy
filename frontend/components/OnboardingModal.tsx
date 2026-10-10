@@ -79,8 +79,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         } else {
           alert(`Onboarding error: ${data.error}`);
         }
-      } catch (err: any) {
-        alert(`Failed to save onboarding: ${err.message}`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Unknown error';
+        alert(`Failed to save onboarding: ${msg}`);
       } finally {
         setIsSubmitting(false);
       }

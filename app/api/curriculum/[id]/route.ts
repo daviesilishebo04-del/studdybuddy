@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { studyRepository } from '@/backend/repositories/studyRepository';
 import { SubmissionStatus } from '@/backend/domain/types';
+import { requireSession } from '@/backend/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,9 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireSession(['GUARDIAN']);
+    if (auth.error) return auth.error;
+
     const { id } = await context.params;
     const body = await request.json();
     const { status } = body;

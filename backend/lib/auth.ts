@@ -1,9 +1,22 @@
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 import { Role } from '@prisma/client';
 
 const SESSION_COOKIE_NAME = 'studybuddy_session';
-const SESSION_SECRET = process.env.SESSION_SECRET || 'studybuddy-default-secure-session-secret-key-32chars';
+export function getSessionSecret(): string {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE !== 'phase-production-build') {
+      throw new Error('CRITICAL SECURITY ERROR: SESSION_SECRET environment variable is missing in production!');
+    }
+    return 'studybuddy-development-secret-key-32chars-minimum!';
+  }
+  if (secret.length < 32 && process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE !== 'phase-production-build') {
+    throw new Error('CRITICAL SECURITY ERROR: SESSION_SECRET must be at least 32 characters long in production!');
+  }
+  return secret;
+}
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
 export interface SessionUser {
@@ -27,7 +40,7 @@ export function signSession(payload: SessionUser): string {
 
   const base64Data = Buffer.from(JSON.stringify(tokenPayload)).toString('base64url');
   const signature = crypto
-    .createHmac('sha256', SESSION_SECRET)
+    .createHmac('sha256', getSessionSecret())
     .update(base64Data)
     .digest('base64url');
 
@@ -44,7 +57,7 @@ export function verifySession(token: string): SessionUser | null {
 
     const [base64Data, signature] = parts;
     const expectedSignature = crypto
-      .createHmac('sha256', SESSION_SECRET)
+      .createHmac('sha256', getSessionSecret())
       .update(base64Data)
       .digest('base64url');
 
@@ -107,4 +120,35 @@ export async function getSession(): Promise<SessionUser | null> {
 export async function clearSessionCookie() {
   const cookieStore = await cookies();
   cookieStore.delete(SESSION_COOKIE_NAME);
+}
+
+/**
+ * Enforces session authentication and optional RBAC authorization in API routes.
+ */
+export async function requireSession(allowedRoles?: Role[]): Promise<
+  | { user: SessionUser; error: null }
+  | { user: null; error: NextResponse }
+> {
+  const user = await getSession();
+  if (!user) {
+    return {
+      user: null,
+      error: NextResponse.json(
+        { error: 'Authentication required. Please log in.' },
+        { status: 401 }
+      ),
+    };
+  }
+
+  if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+    return {
+      user: null,
+      error: NextResponse.json(
+        { error: 'Access denied: insufficient permissions for this action.' },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return { user, error: null };
 }

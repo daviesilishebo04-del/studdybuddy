@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminRepository } from '@/backend/repositories/adminRepository';
+import { adminRepository, UpdateQuestionInput } from '@/backend/repositories/adminRepository';
+import { requireSession } from '@/backend/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 /**
  * PUT: Update an existing question.
@@ -9,10 +12,13 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireSession(['GUARDIAN']);
+    if (auth.error) return auth.error;
+
     const { id } = await params;
     const body = await request.json();
 
-    const updateData: any = {};
+    const updateData: UpdateQuestionInput = {};
     if (body.prompt !== undefined) updateData.prompt = body.prompt;
     if (body.options !== undefined) updateData.options = body.options;
     if (body.correctOptionIndex !== undefined)
@@ -26,6 +32,7 @@ export async function PUT(
     if (body.order !== undefined) updateData.order = body.order;
 
     const updated = await adminRepository.updateQuestion(id, updateData);
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error('Failed to update question:', error);
@@ -44,8 +51,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireSession(['GUARDIAN']);
+    if (auth.error) return auth.error;
+
     const { id } = await params;
     await adminRepository.deleteQuestion(id);
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Failed to delete question:', error);

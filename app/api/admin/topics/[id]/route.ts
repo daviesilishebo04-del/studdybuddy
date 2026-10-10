@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminRepository } from '@/backend/repositories/adminRepository';
+import { requireSession } from '@/backend/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireSession(['GUARDIAN']);
+    if (auth.error) return auth.error;
+
     const { id } = await params;
     const body = await request.json();
 
@@ -22,6 +28,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireSession(['GUARDIAN']);
+    if (auth.error) return auth.error;
+
     const { id } = await params;
     await adminRepository.deleteTopic(id);
     return NextResponse.json({ success: true });
@@ -36,8 +45,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireSession(['GUARDIAN']);
+    if (auth.error) return auth.error;
+
     const { id } = await params;
     const topic = await adminRepository.getTopicById(id);
+
     if (!topic) {
       return NextResponse.json({ error: 'Topic not found' }, { status: 404 });
     }

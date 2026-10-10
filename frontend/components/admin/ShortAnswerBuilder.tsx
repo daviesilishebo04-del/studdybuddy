@@ -46,11 +46,13 @@ export const ShortAnswerBuilder: React.FC<ShortAnswerBuilderProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  useEffect(() => {
+  const [prevSelectedTopicId, setPrevSelectedTopicId] = useState(selectedTopicId);
+  if (selectedTopicId !== prevSelectedTopicId) {
+    setPrevSelectedTopicId(selectedTopicId);
     if (selectedTopicId && selectedTopicId !== topicId) {
       setTopicId(selectedTopicId);
     }
-  }, [selectedTopicId]);
+  }
 
   const loadQuestions = async (tId: string) => {
     if (!tId) return;
@@ -71,10 +73,32 @@ export const ShortAnswerBuilder: React.FC<ShortAnswerBuilderProps> = ({
   };
 
   useEffect(() => {
-    if (topicId) {
-      loadQuestions(topicId);
-    }
+    if (!topicId) return;
+    let ignore = false;
+
+    Promise.resolve().then(async () => {
+      if (ignore) return;
+      setIsLoading(true);
+      try {
+        const res = await fetch(
+          `/api/admin/questions?topicId=${topicId}&type=SHORT_ANSWER`
+        );
+        if (res.ok && !ignore) {
+          const data = await res.json();
+          setQuestions(data);
+        }
+      } catch (err) {
+        if (!ignore) console.error('Failed to load Short Answer questions:', err);
+      } finally {
+        if (!ignore) setIsLoading(false);
+      }
+    });
+
+    return () => {
+      ignore = true;
+    };
   }, [topicId]);
+
 
   const handleTopicSelect = (newTopicId: string) => {
     setTopicId(newTopicId);
@@ -169,8 +193,9 @@ export const ShortAnswerBuilder: React.FC<ShortAnswerBuilderProps> = ({
       setIsFormOpen(false);
       setEditingQuestionId(null);
       await loadQuestions(topicId);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to save question');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to save question';
+      setErrorMsg(msg);
     } finally {
       setIsSaving(false);
     }

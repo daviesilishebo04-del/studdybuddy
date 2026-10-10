@@ -11,13 +11,18 @@ interface UseStudyTelemetryProps {
 export function useStudyTelemetry({ userId, topicId, enabled = true }: UseStudyTelemetryProps) {
   const [activeSeconds, setActiveSeconds] = useState<number>(0);
   const accumulatedUnsentRef = useRef<number>(0);
-  const lastActiveTimestampRef = useRef<number>(Date.now());
+  const lastActiveTimestampRef = useRef<number>(0);
   const activeSecondsRef = useRef<number>(0);
 
-  // Sync ref with state
+  // Sync ref with state & initialize timestamp on mount
+  useEffect(() => {
+    lastActiveTimestampRef.current = Date.now();
+  }, []);
+
   useEffect(() => {
     activeSecondsRef.current = activeSeconds;
   }, [activeSeconds]);
+
 
   // Flush accumulated seconds to server
   const flushHeartbeat = useCallback(async () => {

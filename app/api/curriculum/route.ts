@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { studyRepository } from '@/backend/repositories/studyRepository';
+import { requireSession } from '@/backend/lib/auth';
 import path from 'path';
 import fs from 'fs/promises';
 
@@ -7,8 +8,13 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireSession();
+    if (auth.error) return auth.error;
+    const session = auth.user;
+
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId') || undefined;
+    // Students can only see their own submissions; Guardians can see all or filter by student
+    const userId = session.role === 'STUDENT' ? session.userId : (searchParams.get('userId') || undefined);
 
     const submissions = await studyRepository.getCurriculumSubmissions(userId);
     return NextResponse.json({ submissions });
@@ -23,9 +29,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireSession(['STUDENT']);
+    if (auth.error) return auth.error;
+    const session = auth.user;
+
     const contentType = request.headers.get('content-type') || '';
 
-    let userId = 'student-alex';
+    const userId = session.userId;
     let subjectId = '';
     let subjectName = '';
     let chapterTitle = '';
@@ -38,7 +48,6 @@ export async function POST(request: NextRequest) {
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
-      userId = (formData.get('userId') as string) || 'student-alex';
       subjectId = (formData.get('subjectId') as string) || '';
       subjectName = (formData.get('subjectName') as string) || (formData.get('subject') as string) || '';
       chapterTitle = (formData.get('chapterTitle') as string) || '';
@@ -63,7 +72,6 @@ export async function POST(request: NextRequest) {
     } else {
       // JSON format with base64 data URLs (client-side compressed images)
       const body = await request.json();
-      userId = body.userId || 'student-alex';
       subjectId = body.subjectId || '';
       subjectName = body.subjectName || body.subject || '';
       chapterTitle = body.chapterTitle || '';

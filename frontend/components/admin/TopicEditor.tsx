@@ -81,11 +81,16 @@ export const TopicEditor: React.FC<TopicEditorProps> = ({
 
   // If editing, load the full topic notes and parse into pages
   useEffect(() => {
-    if (topic?.id) {
+    if (!topic?.id) return;
+    let ignore = false;
+
+    Promise.resolve().then(() => {
+      if (ignore) return;
       setIsLoadingNotes(true);
       fetch(`/api/admin/topics/${topic.id}`)
         .then((res) => res.json())
         .then((data) => {
+          if (ignore) return;
           if (data.notesMarkdown) {
             const parsedPages = parseTopicPages(data.notesMarkdown, topic.title);
             setPages(parsedPages);
@@ -95,9 +100,16 @@ export const TopicEditor: React.FC<TopicEditorProps> = ({
           }
         })
         .catch((err) => console.error('Error fetching topic notes:', err))
-        .finally(() => setIsLoadingNotes(false));
-    }
+        .finally(() => {
+          if (!ignore) setIsLoadingNotes(false);
+        });
+    });
+
+    return () => {
+      ignore = true;
+    };
   }, [topic?.id, topic?.title]);
+
 
   // Active page helpers
   const activePage = pages[activePageIndex] || pages[0];
@@ -286,8 +298,9 @@ export const TopicEditor: React.FC<TopicEditorProps> = ({
       setTimeout(() => {
         onSaved();
       }, 600);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'An error occurred while saving');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'An error occurred while saving';
+      setErrorMsg(msg);
     } finally {
       setIsSaving(false);
       setIsUploadingVideo(false);

@@ -3,10 +3,9 @@ import { evaluateQuiz } from '@/backend/services/gradingService';
 import { analyzeMetacognitiveCalibration } from '@/backend/services/telemetryService';
 import { studyRepository } from '@/backend/repositories/studyRepository';
 import { MetacognitiveRating, Question } from '@/backend/domain/types';
+import { requireSession } from '@/backend/lib/auth';
 
 interface QuizSubmitPayload {
-  userId: string;
-  userRole?: string;
   topicId: string;
   durationSeconds: number;
   selfRating?: MetacognitiveRating;
@@ -19,23 +18,14 @@ interface QuizSubmitPayload {
 
 export async function POST(req: Request) {
   try {
-    const roleHeader = req.headers.get('x-user-role');
+    const auth = await requireSession(['STUDENT']);
+    if (auth.error) return auth.error;
+    const session = auth.user;
+
     const payload: QuizSubmitPayload = await req.json();
 
-    const role = roleHeader || payload.userRole || 'STUDENT';
 
-    // RBAC Barrier: Guardians cannot submit quiz attempts
-    if (role === 'GUARDIAN') {
-      return NextResponse.json(
-        {
-          error: "Access denied: Role 'GUARDIAN' is not authorized to submit quiz answers. Student role required.",
-          code: 'FORBIDDEN_ROLE',
-        },
-        { status: 403 }
-      );
-    }
-
-    if (!payload.userId || !payload.topicId || !Array.isArray(payload.answers)) {
+    if (!payload.topicId || !Array.isArray(payload.answers)) {
       return NextResponse.json({ error: 'Missing required quiz fields' }, { status: 400 });
     }
 
@@ -56,7 +46,7 @@ export async function POST(req: Request) {
     // Save to real PostgreSQL database via Prisma
     const attempt = await studyRepository.recordQuizAttempt({
       id: `attempt-${Date.now()}`,
-      userId: payload.userId,
+      userId: session.userId,
       topicId: payload.topicId,
       scorePercent: evaluation.scorePercent,
       totalQuestions: evaluation.totalQuestions,

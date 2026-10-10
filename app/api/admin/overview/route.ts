@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminRepository } from '@/backend/repositories/adminRepository';
 import { studyRepository } from '@/backend/repositories/studyRepository';
+import { requireSession } from '@/backend/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireSession(['GUARDIAN']);
+    if (auth.error) return auth.error;
+
     // Ensure seed data exists
     await studyRepository.getSubjects();
 

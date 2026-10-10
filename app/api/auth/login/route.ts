@@ -70,18 +70,18 @@ export async function POST(request: NextRequest) {
     }
 
     const lower = username.toLowerCase();
-    const isNisa = lower === 'nisa' || lower === 'mboloma' || lower.includes('nisa');
-    const isDavie = lower === 'davie' || lower === 'admin' || lower.includes('davie') || lower.includes('mentor');
-    const isAlex = lower === 'alex';
+    const isNisa = lower === 'nisa' || lower === 'nisa mubuwa mboloma';
+    const isDavie = lower === 'davie' || lower === 'mentor davie' || lower === 'admin';
+    const isAlex = lower === 'alex' || lower === 'alex (champ)';
 
     // Lookup user by name (case-insensitive) or friendly seed alias
-    let user = await prisma.user.findFirst({
+    const user = await prisma.user.findFirst({
       where: {
         OR: [
           { name: { equals: username, mode: 'insensitive' as const } },
           ...(isNisa ? [{ id: 'student-nisa' }, { name: { equals: 'Nisa Mubuwa Mboloma', mode: 'insensitive' as const } }] : []),
           ...(isDavie ? [{ id: 'guardian-davie' }, { name: { equals: 'Mentor Davie', mode: 'insensitive' as const } }] : []),
-          ...(isAlex ? [{ id: 'student-alex' }] : []),
+          ...(isAlex ? [{ id: 'student-alex' }, { name: { equals: 'Alex (Champ)', mode: 'insensitive' as const } }] : []),
         ],
       },
     });
@@ -94,20 +94,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify password
-    let passwordValid = false;
-
-    if (user.passwordHash) {
-      passwordValid = await bcrypt.compare(password, user.passwordHash);
-    } else {
-      // First login for legacy/seeded account without password: set and hash this initial password!
-      const hashedPassword = await bcrypt.hash(password, 10);
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { passwordHash: hashedPassword },
-      });
-      passwordValid = true;
+    if (!user.passwordHash) {
+      recordAttempt(rateLimitKey, false);
+      return NextResponse.json(
+        { error: 'Account has no password configured. Please contact your administrator.' },
+        { status: 401 }
+      );
     }
+
+    // Verify password with constant-time bcrypt comparison
+    const passwordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!passwordValid) {
       recordAttempt(rateLimitKey, false);

@@ -44,8 +44,26 @@ export const CurriculumInbox: React.FC<CurriculumInboxProps> = ({ onNavigateToNo
   };
 
   useEffect(() => {
-    fetchSubmissions();
+    let ignore = false;
+    Promise.resolve().then(async () => {
+      try {
+        const res = await fetch('/api/curriculum');
+        const data = await res.json();
+        if (!ignore && res.ok && data.submissions) {
+          setSubmissions(data.submissions);
+        }
+      } catch (err) {
+        if (!ignore) console.error('Failed to load submissions:', err);
+      } finally {
+        if (!ignore) setIsLoading(false);
+      }
+    });
+
+    return () => {
+      ignore = true;
+    };
   }, []);
+
 
   const handleUpdateStatus = async (id: string, newStatus: SubmissionStatus) => {
     setUpdatingId(id);

@@ -1,18 +1,26 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/backend/lib/prisma';
+import { requireSession } from '@/backend/lib/auth';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireSession(['STUDENT']);
+    if (auth.error) return auth.error;
+    const session = auth.user;
+
     const body = await req.json();
     const {
-      userId = 'student-alex',
       studentName,
       grade,
       selectedSubjectSlugs = [],
       hardSubjectSlugs = [],
     } = body;
+    const userId = session.userId;
 
-    console.log(`[${new Date().toISOString()}] Processing Onboarding for user: ${userId}`);
+    console.log(`[${new Date().toISOString()}] Processing Onboarding for authenticated user: ${userId}`);
+
 
     const result = await prisma.$transaction(async (tx) => {
       // 1. Update User with real timestamp
@@ -107,11 +115,13 @@ export async function POST(req: Request) {
       success: true,
       data: result,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Onboarding persistence error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to save onboarding data';
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to save onboarding data' },
+      { success: false, error: message },
       { status: 500 }
     );
   }
 }
+
