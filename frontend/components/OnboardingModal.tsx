@@ -8,19 +8,21 @@ import confetti from 'canvas-confetti';
 interface OnboardingModalProps {
   isOpen: boolean;
   userId?: string;
+  initialStudentName?: string;
   onComplete: () => void;
 }
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   isOpen,
-  userId = 'student-alex',
+  userId,
+  initialStudentName = '',
   onComplete,
 }) => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Step 1 State: Grade & Name
-  const [studentName, setStudentName] = useState('Alex');
+  const [studentName, setStudentName] = useState(initialStudentName);
   const [grade, setGrade] = useState('Grade 8 / Form One');
 
   // Step 2 State: Exact 7 Subjects (Confirmed: math, history, civic education, english structure, literature, chemistry, religious education)
@@ -134,8 +136,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                       type="text"
                       value={studentName}
                       onChange={(e) => setStudentName(e.target.value)}
-                      className="w-full p-3 rounded-xl border border-[#bed7fa] bg-[#f4f8fe] focus:bg-white text-sm font-bold text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-hidden"
-                      placeholder="e.g. Alex"
+                      className="w-full p-3 rounded-xl border border-[#bed7fa] bg-[#f4f8fe] focus:bg-white text-base sm:text-sm font-bold text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-hidden"
+                      placeholder="e.g. Nisa"
                     />
                   </div>
 
@@ -145,7 +147,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                       type="text"
                       value={grade}
                       onChange={(e) => setGrade(e.target.value)}
-                      className="w-full p-3 rounded-xl border border-[#bed7fa] bg-[#f4f8fe] focus:bg-white text-sm font-bold text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-hidden"
+                      className="w-full p-3 rounded-xl border border-[#bed7fa] bg-[#f4f8fe] focus:bg-white text-base sm:text-sm font-bold text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-hidden"
                       placeholder="e.g. Grade 8 / Form One"
                     />
                   </div>

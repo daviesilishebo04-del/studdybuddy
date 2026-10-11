@@ -131,9 +131,9 @@ export const RegisterStudentModal: React.FC<RegisterStudentModalProps> = ({
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Sarah K. or Alex"
+                placeholder="e.g. Nisa or Sarah"
                 required
-                className="w-full pl-9 pr-3 py-2.5 rounded-lg border-2 border-slate-300 focus:border-blue-600 text-sm font-bold text-slate-900 bg-white outline-none transition-colors"
+                className="w-full pl-9 pr-3 py-2.5 rounded-lg border-2 border-slate-300 focus:border-blue-600 text-base sm:text-sm font-bold text-slate-900 bg-white outline-none transition-colors"
               />
             </div>
             <p className="text-[11px] font-semibold text-slate-500 mt-1">

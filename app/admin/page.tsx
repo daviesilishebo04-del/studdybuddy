@@ -37,7 +37,7 @@ export default async function AdminPage() {
     orderBy: { createdAt: 'desc' },
   });
 
-  const activeStudentId = students.length > 0 ? students[0].id : 'student-alex';
+  const activeStudentId = students.length > 0 ? students[0].id : '';
 
   // Calculate current week's Monday
   const now = new Date();

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/backend/lib/prisma';
-import { requireSession } from '@/backend/lib/auth';
+import { requireSession, setSessionCookie } from '@/backend/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,12 +23,12 @@ export async function POST(req: Request) {
 
 
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Update User with real timestamp
+      // 1. Update User with real timestamp and custom name if provided
       const completedTimestamp = new Date();
       const updatedUser = await tx.user.update({
         where: { id: userId },
         data: {
-          name: studentName || 'Alex',
+          ...(studentName?.trim() ? { name: studentName.trim() } : {}),
           grade: grade || 'Grade 8 / Form One',
           onboardingCompletedAt: completedTimestamp,
         },
@@ -109,6 +109,13 @@ export async function POST(req: Request) {
         priorities,
         slots: createdSlots,
       };
+    });
+
+    // Re-issue session cookie with updated name
+    await setSessionCookie({
+      userId,
+      name: result.user.name,
+      role: session.role,
     });
 
     return NextResponse.json({

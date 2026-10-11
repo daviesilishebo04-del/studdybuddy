@@ -12,6 +12,7 @@ interface GuardianDashboardModalProps {
   activeStudySeconds: number;
   streakDays: number;
   attempts: QuizAttempt[];
+  studentName?: string;
 }
 
 export const GuardianDashboardModal: React.FC<GuardianDashboardModalProps> = ({
@@ -20,6 +21,7 @@ export const GuardianDashboardModal: React.FC<GuardianDashboardModalProps> = ({
   activeStudySeconds,
   streakDays,
   attempts,
+  studentName = 'Student',
 }) => {
   if (!isOpen) return null;
 
@@ -28,7 +30,7 @@ export const GuardianDashboardModal: React.FC<GuardianDashboardModalProps> = ({
   const avgScore =
     totalQuizzes > 0
       ? Math.round(attempts.reduce((sum, a) => sum + a.scorePercent, 0) / totalQuizzes)
-      : 85; // baseline seed average
+      : 0;
 
   return (
     <AnimatePresence>
@@ -47,7 +49,7 @@ export const GuardianDashboardModal: React.FC<GuardianDashboardModalProps> = ({
               </div>
               <div>
                 <h2 className="text-sm font-bold text-slate-900">Guardian / Mentor Telemetry</h2>
-                <p className="text-[11px] text-slate-500">Student: Alex (Grade 8 / Form One)</p>
+                <p className="text-[11px] text-slate-500">Student: {studentName} (Grade 8 / Form One)</p>
               </div>
             </div>
 
@@ -139,7 +141,9 @@ export const GuardianDashboardModal: React.FC<GuardianDashboardModalProps> = ({
               <div className="p-3 rounded-2xl border border-indigo-100 bg-indigo-50/50 text-xs text-indigo-900">
                 <p className="font-semibold">Student Metacognition: Well-Calibrated</p>
                 <p className="text-[11px] text-indigo-700/90 mt-0.5">
-                  Alex self-assessed recent Math as &quot;Fair&quot; and scored 100%, indicating healthy modesty and strong retention.
+                  {totalQuizzes > 0
+                    ? `${studentName}'s self-assessments are actively synced with quiz performance.`
+                    : `${studentName} has not completed any quizzes yet. Calibration will record here after the first study session.`}
                 </p>
               </div>
             </div>

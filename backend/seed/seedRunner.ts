@@ -1,5 +1,5 @@
 import { prisma } from '../lib/prisma';
-import { SEED_USERS, SEED_SUBJECTS, SEED_TOPICS, SEED_QUESTIONS, INITIAL_STREAK } from './curriculumData';
+import { SEED_USERS, SEED_SUBJECTS, SEED_TOPICS, SEED_QUESTIONS } from './curriculumData';
 
 import bcrypt from 'bcryptjs';
 
@@ -111,17 +111,28 @@ async function seed() {
     });
   }
 
-  // 5. Initial Streak
+  // 5. Initial Streak for real student (Starts at 0)
   await prisma.streak.upsert({
-    where: { userId: 'student-alex' },
-    update: {},
+    where: { userId: 'student-nisa' },
+    update: {
+      currentStreak: 0,
+      longestStreak: 0,
+      lastActiveDate: null,
+    },
     create: {
-      userId: 'student-alex',
-      currentStreak: INITIAL_STREAK.currentStreak,
-      longestStreak: INITIAL_STREAK.longestStreak,
-      lastActiveDate: new Date(),
+      userId: 'student-nisa',
+      currentStreak: 0,
+      longestStreak: 0,
+      lastActiveDate: null,
     },
   });
+
+  // 6. Clean up dummy alex user if present
+  try {
+    await prisma.user.delete({ where: { id: 'student-alex' } });
+  } catch {
+    // Ignore if already deleted
+  }
 
   const subjectsInDb = await prisma.subject.findMany({
     orderBy: { name: 'asc' },

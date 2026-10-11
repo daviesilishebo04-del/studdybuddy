@@ -1,18 +1,10 @@
-import { Subject, Topic, Question, StreakState, User } from '../domain/types';
+import { Subject, Topic, Question, StreakState, StreakDay, User } from '../domain/types';
 
 export const SEED_USERS: User[] = [
   {
     id: 'student-nisa',
     email: 'nisa@studybuddy.local',
     name: 'Nisa Mubuwa Mboloma',
-    role: 'STUDENT',
-    grade: 'Grade 8 / Form One',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'student-alex',
-    email: 'student@studybuddy.local',
-    name: 'Alex (Champ)',
     role: 'STUDENT',
     grade: 'Grade 8 / Form One',
     createdAt: new Date().toISOString(),
@@ -243,16 +235,28 @@ export const SEED_QUESTIONS: Question[] = [
   },
 ];
 
+function buildCurrentWeekDays(): StreakDay[] {
+  const days: StreakDay[] = [];
+  const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const now = new Date();
+  const dayIndex = (now.getDay() + 6) % 7; // 0 for Monday, 6 for Sunday
+
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - dayIndex);
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const dateStr = d.toISOString().split('T')[0];
+    const status = i === dayIndex ? 'TODAY' : 'UPCOMING';
+    days.push({ dayLabel: labels[i], dateStr, status });
+  }
+  return days;
+}
+
 export const INITIAL_STREAK: StreakState = {
-  currentStreak: 5,
-  longestStreak: 7,
-  days: [
-    { dayLabel: 'M', dateStr: '2026-08-31', status: 'DONE' },
-    { dayLabel: 'T', dateStr: '2026-09-01', status: 'DONE' },
-    { dayLabel: 'W', dateStr: '2026-09-02', status: 'DONE' },
-    { dayLabel: 'T', dateStr: '2026-09-03', status: 'DONE' },
-    { dayLabel: 'F', dateStr: '2026-09-04', status: 'TODAY' },
-    { dayLabel: 'S', dateStr: '2026-09-05', status: 'UPCOMING' },
-    { dayLabel: 'S', dateStr: '2026-09-06', status: 'MISSED' },
-  ],
+  currentStreak: 0,
+  longestStreak: 0,
+  days: buildCurrentWeekDays(),
 };
+

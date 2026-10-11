@@ -50,10 +50,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(initialOnboardingNeeded);
   const [isTimetableOpen, setIsTimetableOpen] = useState<boolean>(false);
   const [attempts] = useState<QuizAttempt[]>([]);
-  const [activeStudySeconds, setActiveStudySeconds] = useState<number>(16200);
+  const [activeStudySeconds, setActiveStudySeconds] = useState<number>(0);
 
-  const studentName = currentUser?.name || 'Alex';
-  const firstName = studentName.split(' ')[0];
+  const studentName = currentUser?.name || 'Pupil';
+  const firstName = studentName.split(' ')[0] || 'Pupil';
   const initialLetters = studentName
     .split(' ')
     .filter(Boolean)
@@ -303,7 +303,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         <StudyModal
           topic={currentTopic}
           questions={currentQuestions}
-          userId={currentUser?.id || 'student-alex'}
+          userId={currentUser?.id || ''}
           onClose={() => setActiveSession(null)}
           onQuizCompleted={handleQuizCompleted}
         />
@@ -315,11 +315,13 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         activeStudySeconds={activeStudySeconds}
         streakDays={streak.currentStreak}
         attempts={attempts}
+        studentName={studentName}
       />
 
       <OnboardingModal
         isOpen={isOnboardingOpen}
-        userId={currentUser?.id || 'student-alex'}
+        userId={currentUser?.id}
+        initialStudentName={currentUser?.name}
         onComplete={() => {
           setIsOnboardingOpen(false);
           window.location.reload();
@@ -329,7 +331,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       <CurriculumUploadModal
         isOpen={isCurriculumOpen}
         onClose={() => setIsCurriculumOpen(false)}
-        userId={currentUser?.id || 'student-alex'}
+        userId={currentUser?.id || ''}
       />
 
       <TimetableModal

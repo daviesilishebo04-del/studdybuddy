@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
       select: { id: true, name: true, grade: true },
       orderBy: { createdAt: 'desc' },
     });
-    studentId = defaultStudent?.id || 'student-alex';
+    studentId = defaultStudent?.id || 'student-nisa';
   }
 
   const student = await prisma.user.findUnique({

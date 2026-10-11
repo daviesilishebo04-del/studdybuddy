@@ -228,7 +228,7 @@ export const ShortAnswerBuilder: React.FC<ShortAnswerBuilderProps> = ({
             One-Word / Short Answer Question Builder
           </h2>
           <p className="text-xs text-slate-500 mt-1 font-medium">
-            Build recall questions where Alex types in the exact word, phrase, or number.
+            Build recall questions where the pupil types in the exact word, phrase, or number.
           </p>
         </div>
 
@@ -324,7 +324,7 @@ export const ShortAnswerBuilder: React.FC<ShortAnswerBuilderProps> = ({
                 className="w-full px-3.5 py-2 rounded-md bg-white border border-slate-300 text-xs font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 placeholder:text-slate-400"
               />
               <p className="text-[11px] text-slate-500 font-medium">
-                Include synonyms or variations so Alex isn&apos;t marked wrong for slight formatting differences.
+                Include synonyms or variations so the pupil isn&apos;t marked wrong for slight formatting differences.
               </p>
             </div>
 

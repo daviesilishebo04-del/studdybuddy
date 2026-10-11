@@ -231,7 +231,7 @@ export const QuizBuilder: React.FC<QuizBuilderProps> = ({
             Multiple Choice (MCQ) Quiz Builder
           </h2>
           <p className="text-xs text-slate-500 mt-1 font-medium">
-            Build 4-option questions with explanations for Alex to test his understanding.
+            Build 4-option questions with explanations for the pupil to test their understanding.
           </p>
         </div>
 

@@ -15,8 +15,7 @@ import {
   Sparkles,
   AlertCircle,
   Loader2,
-  Info,
-  CheckCircle2
+  Info
 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -203,8 +202,8 @@ export default function LoginPage() {
                       required
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      placeholder="e.g. Nisa or Mentor Davie"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-blue-950 border border-blue-400 text-white placeholder:text-blue-400/60 text-sm font-semibold focus:outline-hidden focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition"
+                      placeholder="Enter your name or username"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-blue-950 border border-blue-400 text-white placeholder:text-blue-400/60 text-base sm:text-sm font-semibold focus:outline-hidden focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition"
                     />
                   </div>
                 </div>
@@ -224,51 +223,15 @@ export default function LoginPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Enter your passcode"
-                      className="w-full pl-10 pr-11 py-3 rounded-xl bg-blue-950 border border-blue-400 text-white placeholder:text-blue-400/60 text-sm font-semibold focus:outline-hidden focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition"
+                      className="w-full pl-10 pr-11 py-3 rounded-xl bg-blue-950 border border-blue-400 text-white placeholder:text-blue-400/60 text-base sm:text-sm font-semibold focus:outline-hidden focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-blue-300 hover:text-white transition"
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-blue-300 hover:text-white transition cursor-pointer"
                       aria-label="Toggle password visibility"
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Quick Profile Fillers for Brother & Mentor */}
-                <div className="pt-1">
-                  <span className="text-[10px] font-bold text-blue-300 uppercase tracking-wider block mb-1.5">
-                    Quick Select Profile:
-                  </span>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setUsername('Nisa');
-                        setPassword('nisa123');
-                      }}
-                      className="py-1.5 px-2 rounded-lg bg-blue-950/80 border border-blue-400/60 hover:border-amber-400 text-[11px] font-bold text-left transition flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <span className="w-5 h-5 rounded-md bg-blue-600 text-white flex items-center justify-center font-black text-[10px]">
-                        N
-                      </span>
-                      <span className="truncate">Nisa (Pupil)</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setUsername('Mentor Davie');
-                        setPassword('mentor123');
-                      }}
-                      className="py-1.5 px-2 rounded-lg bg-blue-950/80 border border-blue-400/60 hover:border-amber-400 text-[11px] font-bold text-left transition flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <span className="w-5 h-5 rounded-md bg-amber-500 text-slate-950 flex items-center justify-center font-black text-[10px]">
-                        D
-                      </span>
-                      <span className="truncate">Mentor Davie</span>
                     </button>
                   </div>
                 </div>
@@ -320,7 +283,7 @@ export default function LoginPage() {
               {/* Bottom Guidance Note */}
               <div className="mt-6 pt-5 border-t border-blue-800/80 text-center">
                 <p className="text-[11px] font-semibold text-blue-300">
-                  Built with care by Mentor Davie for Nisa Mubuwa Mboloma.
+                  StudyBuddy &bull; Single-Sign-On Secure Portal
                 </p>
               </div>
 

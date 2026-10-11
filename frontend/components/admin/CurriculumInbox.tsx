@@ -18,10 +18,11 @@ import {
 import { CurriculumSubmission, SubmissionStatus } from '@/backend/domain/types';
 
 interface CurriculumInboxProps {
+  studentName?: string;
   onNavigateToNotes?: (subjectId?: string, suggestedTitle?: string) => void;
 }
 
-export const CurriculumInbox: React.FC<CurriculumInboxProps> = ({ onNavigateToNotes }) => {
+export const CurriculumInbox: React.FC<CurriculumInboxProps> = ({ studentName = 'Student', onNavigateToNotes }) => {
   const [submissions, setSubmissions] = useState<CurriculumSubmission[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'PENDING' | 'REVIEWED'>('ALL');
@@ -108,7 +109,7 @@ export const CurriculumInbox: React.FC<CurriculumInboxProps> = ({ onNavigateToNo
             )}
           </div>
           <p className="text-xs font-bold text-slate-600 mt-1">
-            Review textbook and syllabus pages sent by Alex to craft tailored study notes and quizzes.
+            Review textbook and syllabus pages sent by {studentName} to craft tailored study notes and quizzes.
           </p>
         </div>
 
@@ -172,8 +173,8 @@ export const CurriculumInbox: React.FC<CurriculumInboxProps> = ({ onNavigateToNo
           </p>
           <p className="text-xs font-semibold text-slate-500 mt-1 max-w-sm mx-auto">
             {activeFilter === 'PENDING'
-              ? 'All caught up! No pending class pages from Alex.'
-              : 'When Alex snaps photos of his school textbook, they will appear here.'}
+              ? `All caught up! No pending class pages from ${studentName}.`
+              : `When ${studentName} snaps photos of school textbooks, they will appear here.`}
           </p>
         </div>
       ) : (
@@ -269,7 +270,7 @@ export const CurriculumInbox: React.FC<CurriculumInboxProps> = ({ onNavigateToNo
                   {sub.notes && (
                     <div className="p-3 bg-blue-50 border-l-4 border-blue-700">
                       <span className="text-[10px] font-black uppercase tracking-wider text-blue-900 block">
-                        Alex&apos;s Note for Mentor
+                        {studentName}&apos;s Note for Mentor
                       </span>
                       <p className="text-xs font-bold text-slate-800 mt-0.5 leading-relaxed">
                         &ldquo;{sub.notes}&rdquo;

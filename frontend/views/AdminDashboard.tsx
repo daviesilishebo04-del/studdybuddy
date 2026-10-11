@@ -70,10 +70,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [students, setStudents] = useState<StudentItem[]>(
     initialStudents.length > 0
       ? initialStudents
-      : [{ id: initialOverview.id || 'student-alex', name: initialOverview.name, grade: initialOverview.grade }]
+      : initialOverview?.id
+      ? [{ id: initialOverview.id, name: initialOverview.name, grade: initialOverview.grade }]
+      : []
   );
   const [activeStudentId, setActiveStudentId] = useState<string>(
-    initialStudents.length > 0 ? initialStudents[0].id : 'student-alex'
+    initialStudents.length > 0 ? initialStudents[0].id : (initialOverview?.id || '')
   );
   const [overview, setOverview] = useState<StudentOverview>(initialOverview);
   const [performance, setPerformance] = useState<WeeklyPerformance>(initialPerformance);
@@ -413,6 +415,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {/* Render Tab: Class Pages Inbox */}
         {activeTab === 'inbox' && (
           <CurriculumInbox
+            studentName={activeStudent?.name}
             onNavigateToNotes={() => {
               setActiveTab('topics');
             }}

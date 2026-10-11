@@ -29,7 +29,7 @@ interface ImageItem {
 export const CurriculumUploadModal: React.FC<CurriculumUploadModalProps> = ({
   isOpen,
   onClose,
-  userId = 'student-alex',
+  userId = '',
   onSuccess,
 }) => {
   const [subject, setSubject] = useState<string>('');

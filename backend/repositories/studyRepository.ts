@@ -108,7 +108,7 @@ class RealPrismaStudyRepository {
           });
         }
 
-        for (const studentId of ['student-nisa', 'student-alex']) {
+        for (const studentId of ['student-nisa']) {
           await prisma.streak.upsert({
             where: { userId: studentId },
             update: {},
@@ -245,7 +245,11 @@ class RealPrismaStudyRepository {
 
   async getStreak(userId?: string): Promise<StreakState> {
     await this.ensureSeeded();
-    const targetUserId = userId || 'student-alex';
+    let targetUserId = userId;
+    if (!targetUserId) {
+      const firstStudent = await prisma.user.findFirst({ where: { role: 'STUDENT' }, select: { id: true } });
+      targetUserId = firstStudent?.id || 'student-nisa';
+    }
     const streak = await prisma.streak.findUnique({ where: { userId: targetUserId } });
     return {
       currentStreak: streak?.currentStreak ?? 0,
@@ -256,7 +260,11 @@ class RealPrismaStudyRepository {
 
   async getTodayPlan(userId?: string): Promise<TodayPlanSession[]> {
     await this.ensureSeeded();
-    const targetUserId = userId || 'student-alex';
+    let targetUserId = userId;
+    if (!targetUserId) {
+      const firstStudent = await prisma.user.findFirst({ where: { role: 'STUDENT' }, select: { id: true } });
+      targetUserId = firstStudent?.id || 'student-nisa';
+    }
     // Prioritization: check subject priorities in PostgreSQL to surface highest priority first
     const priorities = await prisma.subjectPriority.findMany({
       where: { userId: targetUserId },
