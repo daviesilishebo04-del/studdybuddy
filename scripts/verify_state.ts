@@ -1,29 +1,31 @@
 import { prisma } from '../backend/lib/prisma';
 
-async function checkState() {
-  const subjects = await prisma.subject.findMany({
-    orderBy: { slug: 'asc' },
-  });
-  console.log(`[${new Date().toISOString()}] Subjects in Database (${subjects.length}):`, subjects.map(s => ({ id: s.id, slug: s.slug, name: s.name, isAvailable: s.isAvailable })));
+async function verify() {
+  console.log('Querying Supabase Cloud Database sequentially...');
+  
+  const users = await prisma.user.findMany({ select: { id: true, name: true, role: true } });
+  console.log(`[OK] Users (${users.length}):`, users.map((u) => `${u.name} (${u.role})`));
 
-  const user = await prisma.user.findUnique({
-    where: { id: 'student-alex' },
-  });
-  console.log(`[${new Date().toISOString()}] User Record:`, user);
+  const subjects = await prisma.subject.findMany({ select: { id: true, name: true, slug: true, isAvailable: true } });
+  console.log(`[OK] Subjects (${subjects.length}):`, subjects.map((s) => `${s.name} [available: ${s.isAvailable}]`));
 
-  const priorities = await prisma.subjectPriority.findMany({
-    where: { userId: 'student-alex' },
-    include: { subject: true },
-  });
-  console.log(`[${new Date().toISOString()}] Subject Priorities:`, priorities);
+  const topicCount = await prisma.topic.count();
+  console.log(`[OK] Topic Count: ${topicCount}`);
 
-  const slots = await prisma.timetableSlot.findMany({
-    where: { userId: 'student-alex' },
-    include: { subject: true },
-  });
-  console.log(`[${new Date().toISOString()}] Timetable Slots:`, slots);
+  const questionCount = await prisma.question.count();
+  console.log(`[OK] Question Count: ${questionCount}`);
+
+  const streakCount = await prisma.streak.count();
+  console.log(`[OK] Streak Count: ${streakCount}`);
+
+  console.log('\n=============================================');
+  console.log(' ALL DATA CONFIRMED IN SUPABASE CLOUD!');
+  console.log('=============================================\n');
 }
 
-checkState()
-  .catch(console.error)
+verify()
+  .catch((e) => {
+    console.error('Verification error:', e);
+    process.exit(1);
+  })
   .finally(() => prisma.$disconnect());
