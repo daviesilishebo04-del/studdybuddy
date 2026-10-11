@@ -1,17 +1,26 @@
 import { prisma } from '../lib/prisma';
 import { SEED_USERS, SEED_SUBJECTS, SEED_TOPICS, SEED_QUESTIONS, INITIAL_STREAK } from './curriculumData';
 
+import bcrypt from 'bcryptjs';
+
 async function seed() {
   console.log(`[${new Date().toISOString()}] Starting database seed...`);
 
+  const nisaHash = await bcrypt.hash('nisa123', 10);
+  const mentorHash = await bcrypt.hash('mentor123', 10);
+  const alexHash = await bcrypt.hash('alex123', 10);
+
   // 1. Seed Users
   for (const u of SEED_USERS) {
+    const defaultHash = u.id === 'guardian-davie' ? mentorHash : u.id === 'student-alex' ? alexHash : nisaHash;
+    const existing = await prisma.user.findUnique({ where: { id: u.id } });
     await prisma.user.upsert({
       where: { id: u.id },
       update: {
         name: u.name,
         role: u.role,
         grade: u.grade,
+        passwordHash: existing?.passwordHash || defaultHash,
       },
       create: {
         id: u.id,
@@ -19,6 +28,7 @@ async function seed() {
         name: u.name,
         role: u.role,
         grade: u.grade,
+        passwordHash: defaultHash,
       },
     });
   }
