@@ -56,7 +56,7 @@ export const CurriculumUploadModal: React.FC<CurriculumUploadModalProps> = ({
 
   // Universal Canvas Downsampling Utility
   // - JPEG format for universal compatibility across iOS Safari, Android, and desktop
-  // - Caps dimension to 1400px to maintain crisp equations while reducing payload size
+  // - Caps dimension to 1400px to keep equations sharp while keeping payloads light
   const processImageFile = (file: File): Promise<ImageItem> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -205,21 +205,21 @@ export const CurriculumUploadModal: React.FC<CurriculumUploadModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/80">
-      {/* Modal Container: Flat, high-contrast, zero-shadow design */}
-      <div className="relative w-full max-w-xl bg-white border-2 border-slate-900 max-h-[92vh] flex flex-col overflow-hidden text-slate-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200">
+      {/* Modal Container: Friendly, rounded, cohesive with StudyBuddy student experience */}
+      <div className="relative w-full max-w-xl bg-white rounded-2xl border border-blue-200/80 shadow-2xl max-h-[92vh] flex flex-col overflow-hidden text-slate-900 animate-in zoom-in-95 duration-150">
         
         {/* Header Bar */}
-        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b-2 border-slate-900 bg-white">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100 bg-white">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 text-white flex items-center justify-center border-2 border-slate-900 flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20 flex-shrink-0">
               <Camera className="w-5 h-5 stroke-[2.4]" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-black text-slate-950 tracking-tight leading-tight uppercase">
+              <h2 className="text-base sm:text-lg font-black text-slate-950 tracking-tight leading-tight">
                 Send Class Pages
               </h2>
-              <p className="text-xs font-bold text-slate-600">
+              <p className="text-xs font-semibold text-slate-500">
                 Snap textbook pages so your mentor can build your notes
               </p>
             </div>
@@ -227,26 +227,26 @@ export const CurriculumUploadModal: React.FC<CurriculumUploadModalProps> = ({
 
           <button
             onClick={onClose}
-            className="w-9 h-9 border-2 border-slate-900 hover:bg-slate-100 text-slate-900 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-9 h-9 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-900 flex items-center justify-center transition-colors cursor-pointer"
             aria-label="Close dialog"
           >
-            <X className="w-5 h-5 stroke-[2.5]" />
+            <X className="w-5 h-5 stroke-[2.2]" />
           </button>
         </div>
 
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
           {isSuccess ? (
-            /* Success Feedback State */
-            <div className="py-8 flex flex-col items-center text-center space-y-4">
-              <div className="w-14 h-14 bg-emerald-600 text-white border-2 border-slate-900 flex items-center justify-center">
+            /* Friendly Success Feedback State */
+            <div className="py-8 flex flex-col items-center text-center space-y-4 animate-in fade-in zoom-in-95 duration-200">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-sm">
                 <Check className="w-8 h-8 stroke-[3]" />
               </div>
               <div className="space-y-1.5">
-                <h3 className="text-xl font-black text-slate-950 tracking-tight uppercase">
+                <h3 className="text-xl font-black text-slate-950 tracking-tight">
                   Pages Sent to Your Mentor!
                 </h3>
-                <p className="text-sm font-bold text-slate-700 max-w-md leading-relaxed">
+                <p className="text-sm font-semibold text-slate-600 max-w-md leading-relaxed">
                   Your mentor will review what you are learning at school and build your custom study notes and quizzes.
                 </p>
               </div>
@@ -255,14 +255,14 @@ export const CurriculumUploadModal: React.FC<CurriculumUploadModalProps> = ({
                 <button
                   type="button"
                   onClick={handleReset}
-                  className="px-5 py-2.5 bg-blue-600 text-white font-black text-xs uppercase tracking-wider border-2 border-slate-900 hover:bg-blue-700 transition cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-black text-xs uppercase tracking-wider hover:bg-blue-700 active:scale-98 transition cursor-pointer shadow-sm shadow-blue-500/20"
                 >
                   Send Another Page
                 </button>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-5 py-2.5 bg-slate-100 text-slate-900 hover:bg-slate-200 border-2 border-slate-900 font-black text-xs uppercase tracking-wider transition cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-800 hover:bg-slate-200 font-black text-xs uppercase tracking-wider transition cursor-pointer"
                 >
                   Back to Dashboard
                 </button>
@@ -270,28 +270,28 @@ export const CurriculumUploadModal: React.FC<CurriculumUploadModalProps> = ({
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Error Alert Box */}
+              {/* Friendly Error Alert Banner */}
               {error && (
-                <div className="p-3 border-2 border-rose-600 bg-rose-50 flex items-center gap-2.5 text-rose-950 text-xs font-black">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600 stroke-[2.6]" />
+                <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50 flex items-center gap-2.5 text-rose-800 text-xs font-bold animate-in fade-in duration-150">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600 stroke-[2.4]" />
                   <span>{error}</span>
                 </div>
               )}
 
-              {/* 1. Which Subject: Quick Tap Chips + Custom Input */}
+              {/* 1. Which Subject: Quick-Tap Friendly Chips + Text Input */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-900">
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-800">
                     Which Subject? <span className="text-rose-600">*</span>
                   </label>
                   {subject.trim() && (
-                    <span className="text-[11px] font-black uppercase tracking-wider text-blue-700">
+                    <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
                       Selected: {subject}
                     </span>
                   )}
                 </div>
 
-                {/* One-Tap Subject Quick Selection Chips */}
+                {/* Friendly One-Tap Subject Pills */}
                 <div className="flex flex-wrap gap-2">
                   {POPULAR_SUBJECTS.map((subjName) => {
                     const isSelected = subject.toLowerCase() === subjName.toLowerCase();
@@ -303,10 +303,10 @@ export const CurriculumUploadModal: React.FC<CurriculumUploadModalProps> = ({
                           setSubject(subjName);
                           setError(null);
                         }}
-                        className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider border-2 transition cursor-pointer ${
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wide transition cursor-pointer active:scale-95 ${
                           isSelected
-                            ? 'bg-blue-600 text-white border-slate-900'
-                            : 'bg-white text-slate-800 border-slate-300 hover:border-slate-900'
+                            ? 'bg-blue-600 text-white shadow-xs shadow-blue-500/25 border border-blue-600'
+                            : 'bg-slate-50 text-slate-700 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 hover:border-blue-200'
                         }`}
                       >
                         {subjName}
@@ -315,7 +315,7 @@ export const CurriculumUploadModal: React.FC<CurriculumUploadModalProps> = ({
                   })}
                 </div>
 
-                {/* Free Text Input for specific subjects or custom topics */}
+                {/* Free Text Input for specific chapters or custom subjects */}
                 <input
                   ref={subjectInputRef}
                   type="text"
@@ -324,24 +324,24 @@ export const CurriculumUploadModal: React.FC<CurriculumUploadModalProps> = ({
                     setSubject(e.target.value);
                     if (error) setError(null);
                   }}
-                  placeholder="Or type subject/topic (e.g. Mathematics, Science, Biology...)"
-                  className="w-full px-4 py-2.5 border-2 border-slate-300 focus:border-slate-900 text-sm font-bold text-slate-900 placeholder:text-slate-400 bg-white focus:outline-none transition"
+                  placeholder="Or type custom subject (e.g. Mathematics, Biology...)"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 text-sm font-bold text-slate-900 placeholder:text-slate-400 bg-slate-50/50 focus:bg-white transition focus:outline-none"
                 />
               </div>
 
               {/* 2. Photo Capture & Upload Area */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-900">
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-800">
                     Capture or Upload Pages <span className="text-rose-600">*</span>
                   </label>
-                  <span className="text-xs font-black text-slate-900 bg-slate-100 px-2 py-0.5 border border-slate-300">
+                  <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
                     {images.length} {images.length === 1 ? 'page' : 'pages'} added
                   </span>
                 </div>
 
                 {/* Hidden Native File Inputs */}
-                {/* 1) Direct Camera Input for Mobile */}
+                {/* 1) Camera Input for Mobile */}
                 <input
                   ref={cameraInputRef}
                   type="file"
@@ -350,7 +350,7 @@ export const CurriculumUploadModal: React.FC<CurriculumUploadModalProps> = ({
                   className="hidden"
                   onChange={(e) => handleFilesSelected(e.target.files)}
                 />
-                {/* 2) Gallery/File Picker */}
+                {/* 2) Gallery / File Picker */}
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -360,13 +360,13 @@ export const CurriculumUploadModal: React.FC<CurriculumUploadModalProps> = ({
                   onChange={(e) => handleFilesSelected(e.target.files)}
                 />
 
-                {/* Action Buttons: Snap Photo / Choose from Files */}
+                {/* Friendly Dual Action Buttons */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <button
                     type="button"
                     onClick={() => cameraInputRef.current?.click()}
                     disabled={isCompressing || isSubmitting}
-                    className="flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 text-white font-black text-xs uppercase tracking-wider border-2 border-slate-900 hover:bg-blue-700 active:bg-blue-800 transition cursor-pointer disabled:opacity-50"
+                    className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-wider hover:bg-blue-700 active:scale-98 transition cursor-pointer shadow-xs shadow-blue-500/20 disabled:opacity-50"
                   >
                     <Camera className="w-4 h-4 stroke-[2.4]" />
                     <span>{images.length > 0 ? '+ Snap Another Page' : 'Take Photo (Camera)'}</span>
@@ -376,17 +376,17 @@ export const CurriculumUploadModal: React.FC<CurriculumUploadModalProps> = ({
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isCompressing || isSubmitting}
-                    className="flex items-center justify-center gap-2 py-3 px-4 bg-white text-slate-900 border-2 border-slate-900 font-black text-xs uppercase tracking-wider hover:bg-slate-100 transition cursor-pointer disabled:opacity-50"
+                    className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-white text-slate-800 border border-slate-300 font-bold text-xs uppercase tracking-wider hover:bg-slate-50 hover:border-slate-400 active:scale-98 transition cursor-pointer shadow-xs disabled:opacity-50"
                   >
                     <Upload className="w-4 h-4 stroke-[2.4]" />
                     <span>Choose from Photos</span>
                   </button>
                 </div>
 
-                {/* Compression Status indicator */}
+                {/* Friendly Processing Indicator */}
                 {isCompressing && (
-                  <div className="mt-2.5 p-2.5 bg-blue-50 border-2 border-blue-600 flex items-center gap-2 text-blue-950 text-xs font-bold">
-                    <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                  <div className="mt-2.5 p-3 rounded-xl bg-blue-50 border border-blue-200 flex items-center gap-2 text-blue-800 text-xs font-bold animate-in fade-in">
+                    <Loader2 className="w-4 h-4 animate-spin text-blue-700" />
                     <span>Processing page photo for crystal-clear text...</span>
                   </div>
                 )}
@@ -398,9 +398,9 @@ export const CurriculumUploadModal: React.FC<CurriculumUploadModalProps> = ({
                       {images.map((img, idx) => (
                         <div
                           key={img.id}
-                          className="relative border-2 border-slate-900 bg-white overflow-hidden flex flex-col"
+                          className="relative rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex flex-col group shadow-xs hover:border-blue-300 transition"
                         >
-                          <div className="h-32 w-full overflow-hidden bg-slate-100 flex items-center justify-center">
+                          <div className="h-32 w-full overflow-hidden bg-slate-200 flex items-center justify-center">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={img.dataUrl}
@@ -408,19 +408,19 @@ export const CurriculumUploadModal: React.FC<CurriculumUploadModalProps> = ({
                               className="w-full h-full object-cover"
                             />
                           </div>
-                          <div className="p-2 bg-white flex items-center justify-between border-t-2 border-slate-900">
+                          <div className="p-2.5 bg-white flex items-center justify-between border-t border-slate-100">
                             <div className="flex flex-col">
                               <span className="text-xs font-black text-slate-900">
                                 Page {idx + 1}
                               </span>
-                              <span className="text-[10px] font-bold text-slate-600">
+                              <span className="text-[10px] font-semibold text-slate-500">
                                 {img.fileSizeKb} KB
                               </span>
                             </div>
                             <button
                               type="button"
                               onClick={() => handleRemoveImage(img.id)}
-                              className="p-1.5 border border-slate-300 text-slate-700 hover:text-rose-600 hover:border-rose-600 transition cursor-pointer"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
                               title="Delete photo"
                               aria-label={`Remove Page ${idx + 1}`}
                             >
@@ -436,34 +436,34 @@ export const CurriculumUploadModal: React.FC<CurriculumUploadModalProps> = ({
 
               {/* 3. Note for Mentor (Optional) */}
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-900 mb-1.5">
-                  Note for Mentor <span className="text-slate-500 font-bold normal-case">(Optional)</span>
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-800 mb-1.5">
+                  Note for Mentor <span className="text-slate-400 font-semibold normal-case">(Optional)</span>
                 </label>
                 <textarea
                   rows={2}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="e.g. Teacher said question 4 will be on Friday's test. I had trouble with this formula."
-                  className="w-full px-4 py-2.5 border-2 border-slate-300 focus:border-slate-900 text-sm font-bold text-slate-900 placeholder:text-slate-400 bg-white resize-none transition focus:outline-none"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 focus:outline-none text-sm font-semibold text-slate-900 placeholder:text-slate-400 bg-slate-50/50 focus:bg-white resize-none transition"
                 />
               </div>
 
               {/* Footer Action Buttons */}
-              <div className="pt-3 flex items-center justify-end gap-3 border-t-2 border-slate-900">
+              <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={onClose}
                   disabled={isSubmitting}
-                  className="px-4 py-2.5 bg-slate-100 text-slate-900 hover:bg-slate-200 border-2 border-slate-900 font-black text-xs uppercase tracking-wider transition cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold text-xs uppercase tracking-wider transition cursor-pointer"
                 >
                   Cancel
                 </button>
 
-                {/* Send Pages Submit Button: Always responsive to click, never silently disabled! */}
+                {/* Send Pages to Mentor Submit Button: Always responsive & friendly */}
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-black text-xs uppercase tracking-wider transition cursor-pointer border-2 border-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-98 text-white font-black text-xs uppercase tracking-wider transition cursor-pointer shadow-md shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <>
