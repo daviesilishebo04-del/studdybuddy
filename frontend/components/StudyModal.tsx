@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Clock, Award, CheckCircle2, AlertCircle, ArrowRight, Sparkles, BookOpen, Video } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Topic, Question, MetacognitiveRating } from '@/backend/domain/types';
 import { parseTopicPages } from '@/frontend/lib/studyPages';
 import { useStudyTelemetry } from '../hooks/useStudyTelemetry';
+import { applyTextSize } from '@/frontend/lib/accessibility';
 
 interface StudyModalProps {
   topic: Topic;
@@ -40,6 +41,39 @@ export const StudyModal: React.FC<StudyModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [notePageIndex, setNotePageIndex] = useState<number>(0);
+  const [currentTextSize, setCurrentTextSize] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return (
+        localStorage.getItem('studybuddy_text_size') ||
+        document.documentElement.getAttribute('data-text-size') ||
+        'NORMAL'
+      ).toUpperCase();
+    }
+    return 'NORMAL';
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleTextSizeEvent = (e: Event) => {
+      const custom = e as CustomEvent<{ size: string }>;
+      if (custom.detail?.size) {
+        setCurrentTextSize(custom.detail.size.toUpperCase());
+      }
+    };
+    window.addEventListener('studybuddy:textsize', handleTextSizeEvent);
+    return () => window.removeEventListener('studybuddy:textsize', handleTextSizeEvent);
+  }, []);
+
+  const handleUpdateTextSize = (newSize: 'SMALL' | 'NORMAL' | 'LARGE') => {
+    setCurrentTextSize(newSize);
+    applyTextSize(newSize);
+    fetch('/api/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ textSize: newSize }),
+    }).catch(() => {});
+  };
 
   // Active study duration tracking hook
   const { activeSeconds, flushHeartbeat } = useStudyTelemetry({
@@ -192,16 +226,37 @@ export const StudyModal: React.FC<StudyModalProps> = ({
             </span>
           </div>
 
-          <button
-            onClick={() => {
-              flushHeartbeat();
-              onClose();
-            }}
-            className="px-3.5 py-1.5 rounded-md bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
-          >
-            <span>Exit Study</span>
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Quick Text Size Switcher */}
+            <div className="flex items-center bg-slate-100 rounded-lg p-0.5 border border-slate-200">
+              {(['SMALL', 'NORMAL', 'LARGE'] as const).map((sz) => (
+                <button
+                  key={sz}
+                  type="button"
+                  onClick={() => handleUpdateTextSize(sz)}
+                  className={`px-2 py-1 rounded text-[11px] font-black cursor-pointer transition-all ${
+                    currentTextSize === sz
+                      ? 'bg-blue-600 text-white shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title={`Switch font size to ${sz.toLowerCase()}`}
+                >
+                  {sz === 'SMALL' ? 'A-' : sz === 'NORMAL' ? 'A' : 'A+'}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => {
+                flushHeartbeat();
+                onClose();
+              }}
+              className="px-3.5 py-1.5 rounded-md bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+            >
+              <span>Exit Study</span>
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </header>
 
         {/* Full Screen Content Workspace (Max-w-4xl for comfortable readability on widescreen) */}
@@ -309,16 +364,23 @@ export const StudyModal: React.FC<StudyModalProps> = ({
                   </div>
 
                   {/* Slide Title */}
-                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-950 leading-snug tracking-tight">
+                  <h2
+                    style={{ fontSize: 'var(--lesson-text-2xl)' }}
+                    className="font-black text-slate-950 leading-snug tracking-tight transition-all"
+                  >
                     {currentSlide.title}
                   </h2>
 
                   {/* Pure White Study Card (Crisp Rectangular Box) */}
-                  <div className="bg-white rounded-md p-6 sm:p-7 border border-[#b3d1f8] shadow-xs text-slate-800 text-sm sm:text-base leading-relaxed space-y-3 font-sans">
+                  <div className="bg-white rounded-md p-6 sm:p-7 border border-[#b3d1f8] shadow-xs text-slate-800 space-y-3 font-sans transition-all">
                     {currentSlide.paragraphs.map((para, pIdx) => (
                       <p
                         key={pIdx}
-                        className="whitespace-pre-line text-xs sm:text-base font-medium text-slate-700 leading-relaxed"
+                        style={{
+                          fontSize: 'var(--lesson-text-base)',
+                          lineHeight: 'var(--lesson-line-height)',
+                        }}
+                        className="whitespace-pre-line font-medium text-slate-700 transition-all"
                       >
                         {para}
                       </p>
@@ -326,24 +388,36 @@ export const StudyModal: React.FC<StudyModalProps> = ({
 
                     {/* Worked Example Box (Rectangular Box) */}
                     {currentSlide.hasWorkedExample && (
-                      <div className="bg-amber-50/80 rounded-md p-4 sm:p-5 border border-amber-200 mt-4 space-y-2.5">
-                        <div className="flex items-center gap-1.5 text-[11px] font-black text-amber-800 tracking-wider uppercase">
+                      <div className="bg-amber-50/80 rounded-md p-4 sm:p-5 border border-amber-200 mt-4 space-y-2.5 transition-all">
+                        <div
+                          style={{ fontSize: 'var(--lesson-text-xs)' }}
+                          className="flex items-center gap-1.5 font-black text-amber-800 tracking-wider uppercase"
+                        >
                           <Sparkles className="w-3.5 h-3.5 text-amber-600" />
                           <span>{currentSlide.calloutTitle || 'WORKED EXAMPLE'}</span>
                         </div>
 
                         {currentSlide.exampleProblem && (
-                          <div className="text-xs sm:text-sm font-black text-slate-950 font-mono sm:font-sans">
+                          <div
+                            style={{ fontSize: 'var(--lesson-text-sm)' }}
+                            className="font-black text-slate-950 font-mono sm:font-sans transition-all"
+                          >
                             {currentSlide.exampleProblem}
                           </div>
                         )}
 
                         {currentSlide.exampleSolution ? (
-                          <div className="text-xs sm:text-sm font-mono text-slate-800 whitespace-pre-wrap leading-relaxed bg-white/80 p-3 rounded-md border border-amber-200/60">
+                          <div
+                            style={{ fontSize: 'var(--lesson-text-sm)' }}
+                            className="font-mono text-slate-800 whitespace-pre-wrap leading-relaxed bg-white/80 p-3 rounded-md border border-amber-200/60 transition-all"
+                          >
                             {currentSlide.exampleSolution}
                           </div>
                         ) : currentSlide.calloutText ? (
-                          <div className="text-xs sm:text-sm font-bold text-slate-900 leading-relaxed font-mono sm:font-sans">
+                          <div
+                            style={{ fontSize: 'var(--lesson-text-sm)' }}
+                            className="font-bold text-slate-900 leading-relaxed font-mono sm:font-sans transition-all"
+                          >
                             {currentSlide.calloutText}
                           </div>
                         ) : null}
@@ -407,8 +481,11 @@ export const StudyModal: React.FC<StudyModalProps> = ({
               </div>
 
               {/* Question Prompt */}
-              <div className="bg-white border border-[#b3d1f8] rounded-md p-5 sm:p-6 shadow-xs">
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
+              <div className="bg-white border border-[#b3d1f8] rounded-md p-5 sm:p-6 shadow-xs transition-all">
+                <h3
+                  style={{ fontSize: 'var(--lesson-text-xl)' }}
+                  className="font-bold text-slate-900 leading-snug transition-all"
+                >
                   {currentQuestion.prompt}
                 </h3>
               </div>
@@ -438,7 +515,8 @@ export const StudyModal: React.FC<StudyModalProps> = ({
                         key={oIdx}
                         disabled={isConfirmed}
                         onClick={() => handleSelectOption(oIdx)}
-                        className={`p-4 rounded-md border text-left text-xs sm:text-sm flex items-start gap-3 transition-all cursor-pointer ${buttonStyle}`}
+                        style={{ fontSize: 'var(--lesson-text-base)' }}
+                        className={`p-4 rounded-md border text-left flex items-start gap-3 transition-all cursor-pointer ${buttonStyle}`}
                       >
                         <span className="w-6 h-6 rounded-md bg-blue-50 border border-blue-200 flex items-center justify-center font-bold text-xs flex-shrink-0 text-blue-900">
                           {String.fromCharCode(65 + oIdx)}
@@ -459,7 +537,8 @@ export const StudyModal: React.FC<StudyModalProps> = ({
                     placeholder="Type your final answer..."
                     value={userAnswers[currentQuestion.id] || ''}
                     onChange={(e) => handleTypedAnswer(e.target.value)}
-                    className="p-3.5 rounded-md border border-blue-200 bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-slate-900"
+                    style={{ fontSize: 'var(--lesson-text-base)' }}
+                    className="p-3.5 rounded-md border border-blue-200 bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 font-semibold text-slate-900 transition-all"
                   />
                   <p className="text-xs text-slate-700 font-medium">Work out on scratch paper, then type final answer.</p>
                 </div>
@@ -470,13 +549,13 @@ export const StudyModal: React.FC<StudyModalProps> = ({
                 <motion.div
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-4 rounded-md bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1"
+                  className="p-4 rounded-md bg-amber-50 border border-amber-200 text-amber-900 space-y-1 transition-all"
                 >
-                  <div className="flex items-center gap-1.5 font-bold">
+                  <div className="flex items-center gap-1.5 font-bold text-xs">
                     <Sparkles className="w-3.5 h-3.5 text-amber-600" />
                     <span>Feedback &amp; Explanation:</span>
                   </div>
-                  <p>{currentQuestion.explanation}</p>
+                  <p style={{ fontSize: 'var(--lesson-text-sm)' }}>{currentQuestion.explanation}</p>
                 </motion.div>
               )}
 

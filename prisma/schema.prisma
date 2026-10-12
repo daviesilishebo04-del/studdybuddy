@@ -1,6 +1,7 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -31,6 +32,7 @@ model User {
   role                  Role      @default(STUDENT)
   grade                 String?
   onboardingCompletedAt DateTime?
+  lastLoginAt           DateTime?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
@@ -40,6 +42,22 @@ model User {
   timetableSlots        TimetableSlot[]
   curriculumSubmissions CurriculumSubmission[]
   streak                Streak?
+  profile               StudentProfile?
+}
+
+model StudentProfile {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  avatarConfig       Json?
+  dailyGoalMinutes   Int      @default(30)
+  preferredStudyTime String?
+  textSize           String   @default("NORMAL")
+  soundEnabled       Boolean  @default(false)
+  reducedMotion      Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Subject {

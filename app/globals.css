@@ -14,6 +14,55 @@
   --card-border: #b3d1f8;
   --card-shadow: 0 4px 20px -2px rgba(27, 85, 180, 0.09), 0 1px 4px -1px rgba(27, 85, 180, 0.05);
   --card-shadow-hover: 0 10px 25px -4px rgba(27, 85, 180, 0.14), 0 3px 8px -1px rgba(27, 85, 180, 0.07);
+
+  /* Default Typography Scale Tokens for Lesson Reading */
+  --lesson-text-xs: 0.75rem;
+  --lesson-text-sm: 0.875rem;
+  --lesson-text-base: 1rem;
+  --lesson-text-lg: 1.125rem;
+  --lesson-text-xl: 1.375rem;
+  --lesson-text-2xl: 1.625rem;
+  --lesson-line-height: 1.7;
+}
+
+html[data-text-size="small"] {
+  --lesson-text-xs: 0.6875rem;
+  --lesson-text-sm: 0.8125rem;
+  --lesson-text-base: 0.875rem;
+  --lesson-text-lg: 1rem;
+  --lesson-text-xl: 1.1875rem;
+  --lesson-text-2xl: 1.375rem;
+  --lesson-line-height: 1.55;
+}
+
+html[data-text-size="normal"] {
+  --lesson-text-xs: 0.75rem;
+  --lesson-text-sm: 0.875rem;
+  --lesson-text-base: 1rem;
+  --lesson-text-lg: 1.125rem;
+  --lesson-text-xl: 1.375rem;
+  --lesson-text-2xl: 1.625rem;
+  --lesson-line-height: 1.7;
+}
+
+html[data-text-size="large"] {
+  --lesson-text-xs: 0.875rem;
+  --lesson-text-sm: 1.0625rem;
+  --lesson-text-base: 1.25rem;
+  --lesson-text-lg: 1.4375rem;
+  --lesson-text-xl: 1.75rem;
+  --lesson-text-2xl: 2.125rem;
+  --lesson-line-height: 1.85;
+}
+
+/* Reduced Motion Preference Override */
+html[data-reduced-motion="true"] *,
+html[data-reduced-motion="true"] *::before,
+html[data-reduced-motion="true"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
 }
 
 @theme inline {

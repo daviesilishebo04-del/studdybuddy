@@ -85,9 +85,6 @@ const SidebarBody: React.FC<SidebarBodyProps> = ({
 }) => {
   const handleItemClick = (id: DesktopNavTab) => {
     onChangeTab(id);
-    if (id === 'profile' || id === 'progress') {
-      onOpenGuardian();
-    }
     if (id === 'curriculum' && onOpenCurriculum) {
       onOpenCurriculum();
     }

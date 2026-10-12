@@ -22,7 +22,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onChangeTab }) 
   return (
     // Only visible on mobile/small screens (hidden on md and larger)
     <div className="fixed bottom-3 sm:bottom-4 left-3 right-3 sm:left-6 sm:right-6 z-40 md:hidden max-w-md mx-auto">
-      <div className="rounded-full px-3 py-2 shadow-2xl shadow-blue-950/30 border border-white/90 bg-white/95 backdrop-blur-xl">
+      <div className="rounded-full px-3 py-2 shadow-2xl shadow-blue-950/20 border border-white/80 bg-white/95 backdrop-blur-xl">
         <div className="flex items-center justify-around">
           {navItemsRender(activeTab, onChangeTab)}
         </div>

