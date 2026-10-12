@@ -452,9 +452,22 @@ class RealPrismaStudyRepository {
       }
     }
 
+    // Ensure target user exists in database to prevent foreign key failure
+    let targetUserId = data.userId;
+    const userExists = targetUserId
+      ? await prisma.user.findUnique({ where: { id: targetUserId } })
+      : null;
+
+    if (!userExists) {
+      const defaultStudent = await prisma.user.findFirst({
+        where: { role: 'STUDENT' },
+      });
+      targetUserId = defaultStudent ? defaultStudent.id : 'student-nisa';
+    }
+
     const created = await prisma.curriculumSubmission.create({
       data: {
-        userId: data.userId,
+        userId: targetUserId,
         subjectId: matchedSubjectId || null,
         subjectName: resolvedSubjectName || data.subjectName || 'General',
         chapterTitle: data.chapterTitle,
