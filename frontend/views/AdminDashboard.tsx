@@ -18,6 +18,7 @@ import {
   LogOut,
   Camera,
   Loader2,
+  Calendar,
 } from 'lucide-react';
 import {
   StudentOverview,
@@ -31,8 +32,9 @@ import { QuizBuilder } from '@/frontend/components/admin/QuizBuilder';
 import { ShortAnswerBuilder } from '@/frontend/components/admin/ShortAnswerBuilder';
 import { CurriculumInbox } from '@/frontend/components/admin/CurriculumInbox';
 import { RegisterStudentModal } from '@/frontend/components/admin/RegisterStudentModal';
+import { TimetablePlanner } from '@/frontend/components/admin/TimetablePlanner';
 
-export type AdminTab = 'overview' | 'inbox' | 'topics' | 'assessments';
+export type AdminTab = 'overview' | 'inbox' | 'topics' | 'assessments' | 'timetable';
 export type AssessmentSubTab = 'mcq' | 'short_answer';
 
 export interface StudentItem {
@@ -315,6 +317,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <HelpCircle className="w-4 h-4" />
               <span>Quiz &amp; Question Builder</span>
             </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('timetable');
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-md text-xs font-bold transition cursor-pointer ${
+                activeTab === 'timetable'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-700 hover:text-slate-950 hover:bg-blue-50/80'
+              }`}
+            >
+              <Calendar className="w-4 h-4" />
+              <span>Timetable &amp; AI Planner</span>
+            </button>
           </nav>
         </div>
 
@@ -419,6 +436,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             onNavigateToNotes={() => {
               setActiveTab('topics');
             }}
+          />
+        )}
+
+        {/* Render Tab: Timetable & AI Planner */}
+        {activeTab === 'timetable' && (
+          <TimetablePlanner
+            studentId={activeStudentId}
+            studentName={activeStudent?.name}
           />
         )}
       </main>

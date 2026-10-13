@@ -133,3 +133,34 @@ export interface CreateSubmissionInput {
   notes?: string;
   imageUrls: string[];
 }
+
+export type PlanStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+export type PlanSource = 'AI' | 'MANUAL' | 'FALLBACK';
+
+export interface TimetableSlotItem {
+  id: string;
+  userId: string;
+  planId?: string;
+  subjectId: string;
+  subjectName: string;
+  subjectSlug: string;
+  subjectTheme: string;
+  startTime: string;
+  endTime: string;
+  dayOfWeek: string;
+  activity: string;
+}
+
+export interface TimetablePlanItem {
+  id: string;
+  userId: string;
+  status: PlanStatus;
+  source: PlanSource;
+  title: string;
+  mentorNotes?: string;
+  aiRationale?: string;
+  publishedAt?: string;
+  createdAt: string;
+  slots: TimetableSlotItem[];
+}
+

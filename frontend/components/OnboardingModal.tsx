@@ -12,6 +12,8 @@ interface OnboardingModalProps {
   onComplete: () => void;
 }
 
+export type SubjectRating = 'EASY' | 'OK' | 'HARD';
+
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   isOpen,
   userId,
@@ -25,31 +27,48 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const [studentName, setStudentName] = useState(initialStudentName);
   const [grade, setGrade] = useState('Grade 8 / Form One');
 
-  // Step 2 State: Exact 7 Subjects (Confirmed: math, history, civic education, english structure, literature, chemistry, religious education)
+  // Step 2 State: All 7 Junior Secondary Subjects Active
   const allSubjects = [
-    { id: 'math', name: 'Mathematics', active: true, tag: 'MATH' },
-    { id: 'literature', name: 'Literature', active: true, tag: 'LITERATURE' },
-    { id: 'history', name: 'History', active: false },
-    { id: 'civic-education', name: 'Civic Education', active: false },
-    { id: 'english-structure', name: 'English Structure', active: false },
-    { id: 'chemistry', name: 'Chemistry', active: false },
-    { id: 'religious-education', name: 'Religious Education', active: false },
+    { id: 'math', name: 'Mathematics', tag: 'MATH' },
+    { id: 'literature', name: 'Literature in English', tag: 'LIT' },
+    { id: 'chemistry', name: 'Integrated Science', tag: 'SCI' },
+    { id: 'english-structure', name: 'English Structure', tag: 'ENG' },
+    { id: 'history', name: 'History', tag: 'HIST' },
+    { id: 'civic-education', name: 'Civic Education', tag: 'CIV' },
+    { id: 'religious-education', name: 'Religious Education', tag: 'RE' },
   ];
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>(['math', 'literature', 'history']);
 
-  // Step 3 State: Self-Reported Hard Subjects (bootstraps priority to 1.0)
-  const [hardSubjects, setHardSubjects] = useState<string[]>(['math']);
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([
+    'math',
+    'literature',
+    'chemistry',
+    'english-structure',
+    'history',
+  ]);
 
-  // Step 4 State: Generated Timetable (Defaults)
-  const [weekdaySlots] = useState('18:00 - 18:40 (Math) & 19:00 - 19:40 (Literature)');
-  const [weekendSlots] = useState('4 retrieval review tests per day (Sat & Sun)');
+  // Step 3 State: 3-tier Honest Difficulty Rating per Subject
+  const [subjectRatings, setSubjectRatings] = useState<Record<string, SubjectRating>>({
+    math: 'HARD',
+    literature: 'OK',
+    chemistry: 'HARD',
+    'english-structure': 'OK',
+    history: 'EASY',
+    'civic-education': 'EASY',
+    'religious-education': 'EASY',
+  });
 
   if (!isOpen) return null;
+
+  const handleRatingChange = (slug: string, rating: SubjectRating) => {
+    setSubjectRatings((prev) => ({
+      ...prev,
+      [slug]: rating,
+    }));
+  };
 
   const handleNext = async () => {
     if (currentStep < 5) {
       if (currentStep === 4) {
-        // Trigger celebratory confetti when transitioning to Step 5 (confetti can stay multi-colored)
         try {
           confetti({
             particleCount: 70,
@@ -60,9 +79,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       }
       setCurrentStep((prev) => prev + 1);
     } else {
-      // Step 5: Persist directly to real PostgreSQL via /api/onboarding
       setIsSubmitting(true);
       try {
+        const hardSlugs = Object.keys(subjectRatings).filter(
+          (k) => subjectRatings[k] === 'HARD'
+        );
+
         const res = await fetch('/api/onboarding', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -71,7 +93,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             studentName,
             grade,
             selectedSubjectSlugs: selectedSubjects,
-            hardSubjectSlugs: hardSubjects,
+            hardSubjectSlugs: hardSlugs,
+            subjectRatings,
           }),
         });
 
@@ -90,6 +113,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
     }
   };
 
+  const hardCount = selectedSubjects.filter((s) => subjectRatings[s] === 'HARD').length;
+  const hardSubjectNames = selectedSubjects
+    .filter((s) => subjectRatings[s] === 'HARD')
+    .map((s) => allSubjects.find((sub) => sub.id === s)?.name || s);
+
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/65 backdrop-blur-xs">
@@ -99,7 +127,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
           exit={{ opacity: 0, scale: 0.96, y: 12 }}
           className="bg-[#eaf2fd] rounded-3xl shadow-2xl shadow-[#0a1f50]/30 w-full max-w-lg overflow-hidden flex flex-col border border-[#bed7fa]"
         >
-          {/* Header Step Counter: Exactly 5 Steps with Blue Progress Bar */}
+          {/* Header Step Counter */}
           <div className="p-4 border-b border-[#bed7fa] bg-[#e3effd]/80 flex flex-col gap-2.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black text-blue-700 bg-blue-100/90 px-3 py-1 rounded-full border border-blue-200">
@@ -108,7 +136,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               <span className="text-xs font-extrabold text-slate-800">Student Onboarding</span>
             </div>
 
-            {/* Blue Progress Bar */}
             <div className="w-full h-1.5 bg-blue-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-blue-600 rounded-full transition-all duration-300"
@@ -155,13 +182,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               </div>
             )}
 
-            {/* STEP 2: Exact 7 Subjects (Card-Grid Selection) */}
+            {/* STEP 2: All 7 Subjects Active */}
             {currentStep === 2 && (
               <div className="space-y-3">
                 <div>
-                  <h3 className="text-base font-black text-slate-900">What subjects do you take?</h3>
+                  <h3 className="text-base font-black text-slate-900">What subjects are you taking?</h3>
                   <p className="text-xs font-semibold text-slate-700 mt-0.5">
-                    Select your subjects. Math and Literature are currently active.
+                    Select your core school subjects to include in your weekly schedule.
                   </p>
                 </div>
 
@@ -174,7 +201,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                         type="button"
                         onClick={() => {
                           setSelectedSubjects((prev) =>
-                            isSelected ? prev.filter((id) => id !== sub.id) : [...prev, sub.id]
+                            isSelected
+                              ? prev.length > 1
+                                ? prev.filter((id) => id !== sub.id)
+                                : prev
+                              : [...prev, sub.id]
                           );
                         }}
                         className={`p-3 rounded-xl border text-left text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
@@ -188,23 +219,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                             <BookOpen className="w-3.5 h-3.5 text-blue-700 flex-shrink-0" />
                             <span className="truncate">{sub.name}</span>
                           </div>
-                          <div className="flex items-center gap-1">
-                            {sub.tag === 'MATH' && (
-                              <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-                                Math
-                              </span>
-                            )}
-                            {sub.tag === 'LITERATURE' && (
-                              <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                Lit
-                              </span>
-                            )}
-                            {!sub.active && (
-                              <span className="text-[9px] font-medium text-slate-500">
-                                Scheduled
-                              </span>
-                            )}
-                          </div>
+                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-800 border border-blue-200 w-fit">
+                            {sub.tag}
+                          </span>
                         </div>
                         {isSelected && <Check className="w-4 h-4 text-blue-700 stroke-[3] flex-shrink-0" />}
                       </button>
@@ -214,61 +231,85 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               </div>
             )}
 
-            {/* STEP 3: Self-Reported Hard Subjects */}
+            {/* STEP 3: 3-Tier Rating (Easy / OK / Hard) */}
             {currentStep === 3 && (
               <div className="space-y-3">
                 <div>
-                  <h3 className="text-base font-black text-slate-900">Which subjects do you find hardest?</h3>
+                  <h3 className="text-base font-black text-slate-900">How do you feel about each subject?</h3>
                   <p className="text-xs font-semibold text-slate-700 mt-0.5">
-                    Tap any subject to mark it for extra practice (bootstraps priority to 1.0).
+                    Be honest! Your mentor uses this to prioritize your hardest topics first.
                   </p>
                 </div>
 
-                <div className="space-y-2 max-h-[280px] overflow-y-auto p-0.5">
+                <div className="space-y-2.5 max-h-[300px] overflow-y-auto p-0.5">
                   {selectedSubjects.map((subId) => {
                     const sub = allSubjects.find((s) => s.id === subId);
                     if (!sub) return null;
-                    const isHard = hardSubjects.includes(subId);
+                    const rating = subjectRatings[subId] || 'OK';
 
                     return (
-                      <button
+                      <div
                         key={subId}
-                        type="button"
-                        onClick={() => {
-                          setHardSubjects((prev) =>
-                            isHard ? prev.filter((id) => id !== subId) : [...prev, subId]
-                          );
-                        }}
-                        className={`w-full p-3 rounded-xl border text-left text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
-                          isHard
-                            ? 'border-blue-600 bg-blue-100 text-blue-950 ring-2 ring-blue-600/30 shadow-xs'
-                            : 'border-[#bed7fa] bg-[#f4f8fe] text-slate-800 hover:border-blue-300'
-                        }`}
+                        className="p-3 rounded-xl border border-[#bed7fa] bg-[#f4f8fe] flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs"
                       >
-                        <span className="font-extrabold">{sub.name}</span>
-                        <span
-                          className={`text-[10px] px-2.5 py-0.5 rounded-full font-black border ${
-                            isHard
-                              ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-[#eaf2fd] text-slate-700 border-[#bed7fa]'
-                          }`}
-                        >
-                          {isHard ? 'Priority: 1.0 (Hard)' : 'Priority: 0.3'}
+                        <span className="font-extrabold text-xs text-slate-900 truncate">
+                          {sub.name}
                         </span>
-                      </button>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          {/* EASY */}
+                          <button
+                            type="button"
+                            onClick={() => handleRatingChange(subId, 'EASY')}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer ${
+                              rating === 'EASY'
+                                ? 'bg-emerald-600 text-white shadow-xs'
+                                : 'bg-white text-emerald-800 border border-emerald-200 hover:bg-emerald-50'
+                            }`}
+                          >
+                            Easy
+                          </button>
+
+                          {/* OK / FAIR */}
+                          <button
+                            type="button"
+                            onClick={() => handleRatingChange(subId, 'OK')}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer ${
+                              rating === 'OK'
+                                ? 'bg-amber-500 text-slate-950 shadow-xs'
+                                : 'bg-white text-amber-800 border border-amber-200 hover:bg-amber-50'
+                            }`}
+                          >
+                            Fair
+                          </button>
+
+                          {/* HARD */}
+                          <button
+                            type="button"
+                            onClick={() => handleRatingChange(subId, 'HARD')}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer ${
+                              rating === 'HARD'
+                                ? 'bg-rose-600 text-white shadow-xs'
+                                : 'bg-white text-rose-800 border border-rose-200 hover:bg-rose-50'
+                            }`}
+                          >
+                            Hard 🔥
+                          </button>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
               </div>
             )}
 
-            {/* STEP 4: Generated Default Timetable */}
+            {/* STEP 4: Personalized Schedule Preview */}
             {currentStep === 4 && (
               <div className="space-y-3">
                 <div>
-                  <h3 className="text-base font-black text-slate-900">Recommended Study Timetable</h3>
+                  <h3 className="text-base font-black text-slate-900">Your Structured Daily Timetable</h3>
                   <p className="text-xs font-semibold text-slate-700 mt-0.5">
-                    Structured sessions designed for high retention:
+                    Spaced across your {selectedSubjects.length} subjects ({hardCount} prioritized for extra focus):
                   </p>
                 </div>
 
@@ -276,23 +317,33 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   <div className="p-3.5 rounded-2xl bg-[#f4f8fe] border border-[#bed7fa] shadow-xs">
                     <div className="flex items-center gap-2 font-black text-xs text-blue-900 mb-1">
                       <Calendar className="w-4 h-4 text-blue-600" />
-                      <span>Weekdays (Mon - Fri)</span>
+                      <span>Weekdays (Monday – Friday)</span>
                     </div>
-                    <p className="text-xs font-bold text-slate-700">{weekdaySlots}</p>
+                    <p className="text-xs font-bold text-slate-700">
+                      18:00 – 18:40 (Session 1) &bull; 19:00 – 19:40 (Session 2)
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      20-minute rest &amp; hydration break between sessions.
+                    </p>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-[#f4f8fe] border border-[#bed7fa] shadow-xs">
                     <div className="flex items-center gap-2 font-black text-xs text-blue-900 mb-1">
                       <Sparkles className="w-4 h-4 text-blue-600" />
-                      <span>Weekends (Sat &amp; Sun)</span>
+                      <span>Weekends (Saturday &amp; Sunday)</span>
                     </div>
-                    <p className="text-xs font-bold text-slate-700">{weekendSlots}</p>
+                    <p className="text-xs font-bold text-slate-700">
+                      4 Cumulative Retrieval Quizzes per weekend
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Spaced practice to lock weekday lessons into long-term memory.
+                    </p>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* STEP 5: Welcome / Confirmation Screen */}
+            {/* STEP 5: Welcome / Launch Screen */}
             {currentStep === 5 && (
               <div className="space-y-4 text-center py-2">
                 <div className="w-16 h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mx-auto border border-blue-200 shadow-xs">
@@ -302,14 +353,18 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 <div>
                   <h3 className="text-lg font-black text-slate-900">All Set, {studentName}!</h3>
                   <p className="text-xs font-semibold text-slate-700 mt-1 max-w-xs mx-auto">
-                    Your personalized plan is ready. Today we will focus on your priority subjects!
+                    Your timetable has been created and sent to your mentor to oversee!
                   </p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-[#f4f8fe] border border-[#bed7fa] text-xs text-slate-800 text-left space-y-1.5 shadow-xs">
                   <p><strong>Student:</strong> {studentName} ({grade})</p>
-                  <p><strong>Priority Focus:</strong> Math &amp; Literature</p>
-                  <p><strong>Scheduled Slots:</strong> 18:00 - 18:40 &amp; 19:00 - 19:40</p>
+                  <p><strong>Subjects Selected:</strong> {selectedSubjects.length} subjects</p>
+                  <p>
+                    <strong>High-Priority Focus:</strong>{' '}
+                    {hardSubjectNames.length > 0 ? hardSubjectNames.join(', ') : 'Balanced rotation'}
+                  </p>
+                  <p><strong>Daily Sessions:</strong> 18:00 &amp; 19:00</p>
                 </div>
               </div>
             )}
@@ -323,7 +378,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Saving to Database...</span>
+                  <span>Saving Schedule...</span>
                 </>
               ) : (
                 <>

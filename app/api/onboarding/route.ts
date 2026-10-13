@@ -16,11 +16,11 @@ export async function POST(req: Request) {
       grade,
       selectedSubjectSlugs = [],
       hardSubjectSlugs = [],
+      subjectRatings = {},
     } = body;
     const userId = session.userId;
 
     console.log(`[${new Date().toISOString()}] Processing Onboarding for authenticated user: ${userId}`);
-
 
     const result = await prisma.$transaction(async (tx) => {
       // 1. Update User with real timestamp and custom name if provided
@@ -41,9 +41,14 @@ export async function POST(req: Request) {
         },
       });
 
-      // 3. Upsert SubjectPriority for each tapped subject
+      // 3. Upsert SubjectPriority for each tapped subject with 3-tier rating
       for (const sub of subjects) {
-        const isHard = hardSubjectSlugs.includes(sub.slug);
+        const rating =
+          subjectRatings[sub.slug] ||
+          (hardSubjectSlugs.includes(sub.slug) ? 'HARD' : 'OK');
+        const isHard = rating === 'HARD';
+        const priority = isHard ? 1.0 : rating === 'OK' ? 0.5 : 0.2;
+
         await tx.subjectPriority.upsert({
           where: {
             userId_subjectId: {
@@ -53,46 +58,97 @@ export async function POST(req: Request) {
           },
           update: {
             isHard,
-            priority: isHard ? 1.0 : 0.3,
+            priority,
           },
           create: {
             userId,
             subjectId: sub.id,
             isHard,
-            priority: isHard ? 1.0 : 0.3,
+            priority,
           },
         });
       }
 
-      // 4. Create two TimetableSlot rows: 18:00-18:40 & 19:00-19:40
+      // 4. Generate balanced weekly timetable slots across all selected subjects
       await tx.timetableSlot.deleteMany({
         where: { userId },
       });
 
-      const firstSub = subjects.find((s) => s.slug === 'math') || subjects[0];
-      const secondSub =
-        subjects.find((s) => s.slug === 'literature') || subjects[1] || subjects[0];
+      // Distribute slots across weekdays
+      const weekdays = ['MON', 'TUE', 'WED', 'THU', 'FRI'];
+      const slotData: {
+        userId: string;
+        subjectId: string;
+        startTime: string;
+        endTime: string;
+        dayOfWeek: string;
+        activity: string;
+      }[] = [];
 
-      if (firstSub && secondSub) {
-        await tx.timetableSlot.createMany({
-          data: [
-            {
-              userId,
-              subjectId: firstSub.id,
-              startTime: '18:00',
-              endTime: '18:40',
-              dayOfWeek: 'WEEKDAY',
-            },
-            {
-              userId,
-              subjectId: secondSub.id,
-              startTime: '19:00',
-              endTime: '19:40',
-              dayOfWeek: 'WEEKDAY',
-            },
-          ],
+      // Sort subjects by priority descending
+      const sortedSubs = [...subjects].sort((a, b) => {
+        const ratingA = subjectRatings[a.slug] || (hardSubjectSlugs.includes(a.slug) ? 'HARD' : 'OK');
+        const ratingB = subjectRatings[b.slug] || (hardSubjectSlugs.includes(b.slug) ? 'HARD' : 'OK');
+        const scoreA = ratingA === 'HARD' ? 3 : ratingA === 'OK' ? 2 : 1;
+        const scoreB = ratingB === 'HARD' ? 3 : ratingB === 'OK' ? 2 : 1;
+        return scoreB - scoreA;
+      });
+
+      let subIdx = 0;
+      for (let dayIdx = 0; dayIdx < weekdays.length; dayIdx++) {
+        const day = weekdays[dayIdx];
+        const s1 = sortedSubs[subIdx % sortedSubs.length];
+        subIdx++;
+        let s2 = sortedSubs[subIdx % sortedSubs.length];
+        if (s2.id === s1.id && sortedSubs.length > 1) {
+          subIdx++;
+          s2 = sortedSubs[subIdx % sortedSubs.length];
+        }
+        subIdx++;
+
+        const isS1Hard =
+          (subjectRatings[s1.slug] || (hardSubjectSlugs.includes(s1.slug) ? 'HARD' : 'OK')) === 'HARD';
+
+        slotData.push({
+          userId,
+          subjectId: s1.id,
+          startTime: '18:00',
+          endTime: '18:40',
+          dayOfWeek: day,
+          activity: isS1Hard ? 'LEARN' : 'QUIZ',
+        });
+
+        slotData.push({
+          userId,
+          subjectId: s2.id,
+          startTime: '19:00',
+          endTime: '19:40',
+          dayOfWeek: day,
+          activity: 'QUIZ',
         });
       }
+
+      // Create an initial PUBLISHED plan
+      const initialPlan = await tx.timetablePlan.create({
+        data: {
+          userId,
+          status: 'PUBLISHED',
+          source: 'FALLBACK',
+          title: 'Initial Onboarding Schedule',
+          aiRationale: 'Generated from initial student subject choices and self-reported difficulty ratings.',
+          publishedAt: new Date(),
+          slots: {
+            create: slotData.map((s) => ({
+              userId: s.userId,
+              subjectId: s.subjectId,
+              startTime: s.startTime,
+              endTime: s.endTime,
+              dayOfWeek: s.dayOfWeek,
+              activity: s.activity,
+            })),
+          },
+        },
+      });
 
       const createdSlots = await tx.timetableSlot.findMany({
         where: { userId },
