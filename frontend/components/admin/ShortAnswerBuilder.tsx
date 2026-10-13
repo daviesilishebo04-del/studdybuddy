@@ -11,9 +11,11 @@ import {
   Loader2,
   Check,
   Type,
+  Sparkles,
 } from 'lucide-react';
 import { TopicWithCounts } from '@/backend/repositories/adminRepository';
 import { Question } from '@/backend/domain/types';
+import { AiQuestionPanel } from './AiQuestionPanel';
 
 interface ShortAnswerBuilderProps {
   topics: TopicWithCounts[];
@@ -34,6 +36,7 @@ export const ShortAnswerBuilder: React.FC<ShortAnswerBuilderProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [isAiPanelOpen, setIsAiPanelOpen] = useState<boolean>(false);
 
   // Form fields
   const [prompt, setPrompt] = useState<string>('');
@@ -218,6 +221,8 @@ export const ShortAnswerBuilder: React.FC<ShortAnswerBuilderProps> = ({
     }
   };
 
+  const currentTopic = topics.find((t) => t.id === topicId);
+
   return (
     <div className="flex flex-col gap-5">
       {/* Header with Topic Picker */}
@@ -250,6 +255,14 @@ export const ShortAnswerBuilder: React.FC<ShortAnswerBuilderProps> = ({
               ))}
             </select>
           </div>
+
+          <button
+            onClick={() => setIsAiPanelOpen(true)}
+            className="px-3.5 py-2.5 rounded-md bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 text-white text-xs font-black transition flex items-center gap-1.5 shadow-xs cursor-pointer mt-auto border border-blue-600/40"
+          >
+            <Sparkles className="w-4 h-4 text-blue-200" />
+            <span>Generate with AI</span>
+          </button>
 
           <button
             onClick={handleOpenCreateForm}
@@ -452,6 +465,20 @@ export const ShortAnswerBuilder: React.FC<ShortAnswerBuilderProps> = ({
             </div>
           ))}
         </div>
+      )}
+
+      {/* AI Question Panel Drawer */}
+      {currentTopic && (
+        <AiQuestionPanel
+          isOpen={isAiPanelOpen}
+          onClose={() => setIsAiPanelOpen(false)}
+          topicId={currentTopic.id}
+          topicTitle={currentTopic.title}
+          subjectId={currentTopic.subjectId}
+          subjectName={currentTopic.subjectName}
+          questionType="SHORT_ANSWER"
+          onQuestionAccepted={() => loadQuestions(topicId)}
+        />
       )}
     </div>
   );

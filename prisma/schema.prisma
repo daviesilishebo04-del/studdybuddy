@@ -68,6 +68,7 @@ model Subject {
   icon           String
   colorTheme     String
   isAvailable    Boolean           @default(false)
+  teachingProfile String?
   topics                Topic[]
   priorities            SubjectPriority[]
   timetableSlots        TimetableSlot[]

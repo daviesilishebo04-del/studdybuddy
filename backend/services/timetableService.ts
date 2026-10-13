@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { PlanSource, PlanStatus } from '@prisma/client';
+import { callGemini } from './geminiClient';
 
 export interface SubjectWithPriority {
   id: string;
@@ -196,33 +197,11 @@ Rules for the timetable:
 }
 `;
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.3,
-          responseMimeType: 'application/json',
-        },
-      }),
+    const rawText = await callGemini({
+      contents: [{ parts: [{ text: prompt }] }],
+      temperature: 0.3,
+      responseMimeType: 'application/json',
     });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      console.warn(`Gemini API error (Status ${res.status}): ${errText}`);
-      return generateRuleBasedTimetable(subjects, mentorNotes);
-    }
-
-    const data = await res.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!rawText) {
-      console.warn('Gemini returned empty response. Falling back.');
-      return generateRuleBasedTimetable(subjects, mentorNotes);
-    }
 
     const parsedJson = JSON.parse(rawText);
     const validated = AIResponseSchema.parse(parsedJson);

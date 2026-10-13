@@ -16,6 +16,7 @@ export interface Subject {
   icon: string;
   colorTheme: 'blue' | 'emerald' | 'amber' | 'purple' | 'indigo' | 'teal' | 'rose';
   isAvailable: boolean;
+  teachingProfile?: string | null;
 }
 
 export interface Topic {
@@ -163,4 +164,29 @@ export interface TimetablePlanItem {
   createdAt: string;
   slots: TimetableSlotItem[];
 }
+
+export type BloomLevel = 'recall' | 'understand' | 'apply';
+
+export interface AiGeneratedQuestion {
+  tempId: string;
+  prompt: string;
+  type: QuestionType;
+  options?: string[];
+  correctOptionIndex?: number;
+  acceptableAnswers?: string[];
+  explanation: string;
+  sourceQuote: string;
+  bloomLevel: BloomLevel;
+  selfCheckPass: boolean;
+  selfCheckReason?: string;
+  isAccepted?: boolean;
+}
+
+export interface QuestionGenerationResult {
+  transcript: string;
+  unclearCount: number;
+  questions: AiGeneratedQuestion[];
+  promptVersion: string;
+}
+
 
