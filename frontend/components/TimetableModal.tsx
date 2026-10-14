@@ -29,7 +29,6 @@ interface TimetableResponse {
   success: boolean;
   planTitle?: string;
   mentorNotes?: string | null;
-  aiRationale?: string | null;
   slots: TimetableSlotData[];
 }
 

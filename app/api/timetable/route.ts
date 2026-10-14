@@ -36,7 +36,6 @@ export async function GET(request: NextRequest) {
         success: true,
         planTitle: publishedPlan.title,
         mentorNotes: publishedPlan.mentorNotes,
-        aiRationale: publishedPlan.aiRationale,
         slots: publishedPlan.slots.map((s) => ({
           id: s.id,
           subjectId: s.subjectId,
@@ -62,7 +61,6 @@ export async function GET(request: NextRequest) {
       success: true,
       planTitle: 'Daily Study Schedule',
       mentorNotes: null,
-      aiRationale: null,
       slots: legacySlots.map((s) => ({
         id: s.id,
         subjectId: s.subjectId,
